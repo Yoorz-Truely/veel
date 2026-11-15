@@ -1,0 +1,5 @@
+// `key=value` on a line of its own, and `=` with spaces: a child node takes a space.
+sequence @main {
+  rate=25
+  size = [1920 1080]
+}

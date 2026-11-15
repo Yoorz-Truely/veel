@@ -1,0 +1,6 @@
+// A `}` and a `]` that close nothing.
+track @v1 video {
+  clip @a from=@interview 0..+5s at 0
+}
+}
+size 1920 1080]
