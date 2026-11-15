@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
-"""Commit code only after `just check` passed on that very tree (task 0-10).
+"""Commit code only after `just check` passed on that very tree.
 
 `just check` calls `start <key>` first and `pass <key>` last. `pass` records the tree the check
 ran on in `work/check/passed`, but only if no code changed while it ran: documents may change
-meanwhile (board commits and reports land in Sau's main checkout all day, task 0-13), since
-they may differ from a checked tree anyway. The
-commit-msg hook calls `require`: by then pre-commit's fixers have re-staged what they changed,
-so the index is what will be committed. It refuses a commit that touches code unless its staged
-tree has such a record. "The tree" is every file that is not ignored, as `git add -A` would
-stage it, tracked or not; documents may differ from it, code may not. A merge Git made by itself
-(MERGE_HEAD one commit, not HEAD or its ancestor, merging with no conflict, the staged code
-exactly that merge's) and documents-only commits need no record; a conflict resolved by hand
-needs `just check` like any commit.
+meanwhile (board commits and reports land in the main checkout all day), since they may differ
+from a checked tree anyway. The commit-msg hook calls `require`: by then pre-commit's fixers
+have re-staged what they changed, so the index is what will be committed. It refuses a commit
+that touches code unless its staged tree has such a record. "The tree" is every file that is not
+ignored, as `git add -A` would stage it, tracked or not; documents may differ from it, code may
+not. A merge Git made by itself (MERGE_HEAD one commit, not HEAD or its ancestor, merging with
+no conflict, the staged code exactly that merge's) and documents-only commits need no record; a
+conflict resolved by hand needs `just check` like any commit.
 
 Not code: `*.md` and everything under `docs/`; in Null, Cosmósis, Veel and Veelindy also images
 (`.png`, `.jpg`, `.jpeg`, `.gif`, `.svg`, `.webp`). Sau and Annilay build their branding images into
@@ -106,7 +105,7 @@ def passed(key, cwd=None, quiet=False):
     marker.unlink()
     now = working_tree(cwd)
     if now != began:
-        # Only code that changed while the check ran stops the record (task 0-13): documents may
+        # Only code that changed while the check ran stops the record: documents may
         # differ from a checked tree anyway, so the tree the check began on is recorded.
         sau = is_sau(top(cwd))
         changed = [p for p in git("diff", "--name-only", "-z", began, now, cwd=cwd).split("\0") if p]
@@ -264,8 +263,8 @@ def scenario(sau, me, expect):
         (repo / "scratch.rs").unlink()
         check(edit_during=lambda: src.write_text("fn a() { d() }\n"))
         expect(f"{tag}: code edited while its check ran", commit("code"), False)
-        # Documents changed while the check ran, as board commits and reports land in Sau's main
-        # checkout (task 0-13): the check is still recorded, and the code commits.
+        # Documents changed while the check ran, as board commits and reports land in the main
+        # checkout: the check is still recorded, and the code commits.
         src.write_text("fn a() { during() }\n")
         board = repo / "docs" / "TASKS.md"
         report = repo / "docs" / "rounds" / "agent-x.md"
@@ -441,7 +440,7 @@ def selftest():
     one more edit; allowed after a passing check and for documents alone; merges exempt. Then
     this repository's hooks and check must call this file."""
     # Run from a hook or a rebase, git's GIT_DIR, GIT_INDEX_FILE and the rest would send the
-    # throwaway repositories' commits to the real one: clear every GIT_* first (task 0-33).
+    # throwaway repositories' commits to the real one: clear every GIT_* first.
     for key in [k for k in os.environ if k.startswith("GIT_")]:
         del os.environ[key]
     me = pathlib.Path(__file__).resolve()
