@@ -1,0 +1,4 @@
+child-equals.veel:3:7 error[veel-syntax]: a child node is its name, a space and its value: `rate …`; `rate=…` goes on its owner's line
+  fix: write a space for the =
+child-equals.veel:4:8 error[veel-syntax]: `=` takes no spaces: write `size=…` on its owner's line, or `size …` as a line of its own
+  fix: write `size` and its value as a line of its own

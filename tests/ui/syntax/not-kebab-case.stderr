@@ -1,0 +1,11 @@
+not-kebab-case.veel:2:26 error[veel-name]: `Start_Timecode` is not kebab-case: a property key is lower-case words joined by `-`
+  fix: write `start-timecode`
+not-kebab-case.veel:3:3 error[veel-name]: `colorSpace` is not kebab-case: a node name is lower-case words joined by `-`
+  fix: write `color-space`
+not-kebab-case.veel:4:3 error[veel-name]: `field_order` is not kebab-case: a node name is lower-case words joined by `-`
+  fix: write `field-order`
+not-kebab-case.veel:5:3 error[veel-name]: a node name is a kebab-case word, not a string
+  note: strings are for values: display names, paths and text
+  fix: write `pixel-aspect`
+not-kebab-case.veel:6:3 error[veel-name]: `@Bad_Name` is not a kebab-case handle: `@`, then lower-case words joined by `-`
+  fix: write `@bad-name`

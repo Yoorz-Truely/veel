@@ -1,0 +1,4 @@
+stray-close.veel:5:1 error[veel-syntax]: this } closes nothing; remove it or add the { it belongs to
+  fix: remove the }
+stray-close.veel:6:15 error[veel-syntax]: this ] closes no list
+  fix: remove the ]

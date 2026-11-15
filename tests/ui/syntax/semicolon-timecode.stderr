@@ -1,0 +1,2 @@
+semicolon-timecode.veel:2:34 error[veel-name]: `00..+5s` is not kebab-case: a node name is lower-case words joined by `-`
+  note: `;` ends a node: drop-frame timecode is written with colons, and the sequence's `timecode` line says how frames are counted

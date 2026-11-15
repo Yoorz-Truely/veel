@@ -1,0 +1,4 @@
+// A list never closed: a list may run over lines, so it runs on to the end of the file.
+sequence @main {
+  size [1920 1080
+}

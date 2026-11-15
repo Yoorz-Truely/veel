@@ -4,10 +4,10 @@ The tests that hold the compiler to the [specification](../docs/spec/veel-v0.md)
 
 | Folder | Holds | Proves | Arrives with |
 | --- | --- | --- | --- |
-| `ui/` | One `.veel` file per case, with its expected diagnostics in a `.stderr` file beside it, checked with the slice's schema | Diagnostics: code, place and wording | 1a-01, 1a-04 |
+| `ui/` | One `.veel` file per case, with its expected diagnostics in a `.stderr` file beside it, checked with the slice's schema. `ui/syntax/` holds the syntax's own cases, run by `veel_syntax` with no schema: good files (named `good-…`, an empty `.stderr`) and broken ones | Diagnostics: code, place and wording | 1a-01 (`ui/syntax/`), 1a-04 |
 | `ui-spec/` | The same, checked with the whole schema generated from Kdenlive's assets | Diagnostics of every asset kind and parameter | 1b-04 |
 | `negative/` | One case per diagnostic code, with its expected diagnostics beside it | Every code, message and fix the spec lists | 1a-04 |
-| `roundtrip/` | Files that must print back byte for byte and lower to the same model | The lossless tree, the printing rule and lowering | 1a-01 |
+| `roundtrip/` | Files that must print back byte for byte and lower to the same model. Until lowering exists (1a-04), `veel_syntax` checks that each prints back with no diagnostics | The lossless tree, the printing rule and lowering | 1a-01 |
 | `slice/` | Files written only in the phase 1a slice | That the slice checks with no diagnostics at all, lowers, prints back and edits minimally | 1a-03 |
 | `corpus/` | Hand-written projects, from one clip to a whole cut | Everything: every other test runs over them too | 1d-07 |
 | `migrate/v0/` | The corpus's `.veel` files as they were when v0 was frozen | That `annilay migrate` turns every v0 project into the current format, and changes nothing the second time | 1d-02 |

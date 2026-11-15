@@ -1,0 +1,2 @@
+// `(` and `)` are reserved: arithmetic is written without them (spec section 4).
+clip @a from=@interview 0..+5s at (2*12)

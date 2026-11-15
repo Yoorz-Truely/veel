@@ -1,0 +1,4 @@
+reserved-parens.veel:2:35 error[veel-syntax]: `(` is reserved and cannot appear here
+  fix: remove the (
+reserved-parens.veel:2:40 error[veel-syntax]: `)` is reserved and cannot appear here
+  fix: remove the )

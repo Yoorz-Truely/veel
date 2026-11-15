@@ -1,0 +1,4 @@
+unclosed-string.veel:2:11 error[veel-syntax]: this string is not closed on its line; add " or write a line break as \n
+  fix: add " at the end of the line
+unclosed-string.veel:3:18 error[veel-syntax]: unknown escape; the escapes are \" \\ \n \t and \u{...}
+  fix: write the backslash as \\

@@ -1,0 +1,2 @@
+unclosed-list.veel:3:8 error[veel-syntax]: this [ is never closed; add ] after the last value
+  fix: add ] after the last value

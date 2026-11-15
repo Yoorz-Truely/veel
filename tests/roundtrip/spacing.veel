@@ -1,0 +1,14 @@
+// Spacing, blank lines and comments as an author leaves them: every byte comes back.
+
+
+sequence   @main  "Main"   {
+	rate 24000/1001   // a tab before, spaces after
+  size [ 1920   1080 ]
+
+  track @v1 video {   /* a comment
+  over two lines */
+    clip @a from=@interview 10:00:00:00..10:00:05:00 \
+      at 01:00:00:00 len 120
+    clip @b from=@interview 0..+250ms at=120;clip @c from=@interview 0..+1s at 01:00:05:00
+  }
+}

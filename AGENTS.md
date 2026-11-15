@@ -33,7 +33,7 @@ Veel writes Scowr's node syntax and uses Scowr's front-end crates for it, by pat
 - Scowr's other crates (`scowr_value`, `scowr_schema`, `scowr_check`, `scowr_fmt` and the rest) are Scowr's language, not shared syntax; Veel does not use them.
 - Never change Scowr from here. A change Veel needs in the shared syntax is agreed with RL first, made in Scowr, and passes Scowr's own tests (`cargo test --workspace` in `../Scowr`). Record such a need on Annilay's board as `blocked` with the exact change.
 - Format with `cargo fmt` (what `just fmt` and `just check` run), never `cargo fmt --all`: `--all` also formats local path dependencies, which would rewrite Scowr's files.
-- Known edges of the shared syntax, for Veel's checker to handle (found by Null): `at`, `to` and `len` followed by a space and a value are read as Scowr's keyword attributes (`NodeKind::Keyword`), not arguments; and a node ends only at a line feed, `;` or `}`, so `{ width 4mm segments 3 }` is one child, `width`, with three arguments. Add any edge Veel finds.
+- Known edges of the shared syntax, for Veel's checker to handle (found by Null): `at`, `to` and `len` followed by a space and a value are read as Scowr's keyword attributes (`NodeKind::Keyword`), not arguments; and a node ends only at a line feed, `;` or `}`, so `{ width 4mm segments 3 }` is one child, `width`, with three arguments. Add any edge Veel finds. Found by Veel (1a-01): a drop-frame timecode written with `;` (`00:00:10;00`) ends its node at the `;`, so its frames start a new node; `veel_syntax` adds a note saying timecode is written with colons. A list may run over lines, so an unclosed `[` runs on to the end of the file.
 
 ## Task routes
 
