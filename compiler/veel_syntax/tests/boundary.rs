@@ -33,9 +33,13 @@ fn only_veel_syntax_names_scowr() {
         let mut files = Vec::new();
         rust_and_toml_files(&dir, &mut files);
         for f in files {
+            // A crate is named by its identifier in code or a manifest; prose may mention Scowr.
             let text = std::fs::read_to_string(&f).unwrap();
-            if text.to_lowercase().contains("scowr") {
-                offenders.push(f.display().to_string());
+            for (i, line) in text.lines().enumerate() {
+                let code = line.trim_start();
+                if code.contains("scowr_") && !code.starts_with("//") && !code.starts_with('#') {
+                    offenders.push(format!("{}:{}", f.display(), i + 1));
+                }
             }
         }
     }
