@@ -1,0 +1,6 @@
+// A block never closed: the rest of the file still parses.
+sequence @main {
+  rate 25
+  track @v1 video {
+    clip @a from=@interview 0..+5s at 0
+}

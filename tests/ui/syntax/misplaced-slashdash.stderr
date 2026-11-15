@@ -1,0 +1,4 @@
+misplaced-slashdash.veel:2:6 error[veel-syntax]: /- comments out a whole node; put it before the node's name
+  fix: remove the /-
+misplaced-slashdash.veel:3:29 error[veel-syntax]: a node ends after its block; start a new line for what follows
+misplaced-slashdash.veel:4:3 error[veel-syntax]: expected a node name after /-

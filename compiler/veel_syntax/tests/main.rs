@@ -2,8 +2,15 @@
 //! beside this one is a module here, not a binary of its own, so `cargo test` links one
 //! executable. A new test file must be listed here: `every_test_file_is_a_module` fails otherwise.
 
+#[path = "boundary.rs"]
+mod boundary;
+#[path = "syntax.rs"]
+mod syntax;
+#[path = "ui.rs"]
+mod ui;
+
 /// The test files of this folder, each a module above.
-const MODULES: &[&str] = &[];
+const MODULES: &[&str] = &["boundary.rs", "syntax.rs", "ui.rs"];
 
 #[test]
 fn every_test_file_is_a_module() {
