@@ -1,0 +1,21 @@
+[package]
+name = "veel_syntax"
+description = "Veel's syntax: Scowr's shared lexer and lossless tree, with Veel's diagnostic codes"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+rust-version.workspace = true
+# One test binary for the files in tests/ (as Null's crates, Sau's S69): tests/main.rs.
+autotests = false
+
+[dependencies]
+scowr_errors.workspace = true
+scowr_syntax.workspace = true
+
+[lints]
+workspace = true
+
+[[test]]
+name = "main"
+path = "tests/main.rs"

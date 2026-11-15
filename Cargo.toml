@@ -1,0 +1,35 @@
+[workspace]
+resolver = "3"
+members = ["compiler/*"]
+
+[workspace.package]
+version = "0.0.0"
+edition = "2024"
+license = "MIT"
+publish = false
+rust-version = "1.99"
+
+# The front end Veel shares with Scowr, by path (V17). Only `veel_syntax` names these; every
+# other Veel crate goes through it. The boundary is in AGENTS.md.
+[workspace.dependencies]
+veel_syntax = { path = "compiler/veel_syntax" }
+scowr_errors = { path = "../Scowr/compiler/scowr_errors" }
+scowr_syntax = { path = "../Scowr/compiler/scowr_syntax" }
+
+[workspace.lints.rust]
+missing_docs = "warn"
+unsafe_code = "deny"
+
+# Cheap builds (V45, as Null's and Sau's S69): incremental caches are rewritten on every build, a
+# large share of the SSD's writes, so none; line tables only for our own crates, enough for a
+# backtrace's file and line; no debug info for dependencies.
+[profile.dev]
+debug = "line-tables-only"
+incremental = false
+
+[profile.dev.package."*"]
+debug = false
+
+[profile.test]
+debug = "line-tables-only"
+incremental = false

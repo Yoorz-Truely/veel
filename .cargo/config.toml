@@ -1,0 +1,6 @@
+# Every compile goes through the machine-wide build guard, an identical copy of Sau's
+# sau/tools/build-guard.py, which limits concurrent compiles across all agents and backs off
+# when the Mac runs hot. Shared by Annilay, Veel and Veelindy; see Annilay's
+# docs/agents/parallel.md. Bypass for one command with SAU_BUILD_GUARD=0 only with RL's say.
+[build]
+rustc-wrapper = "tools/build-guard.py"
