@@ -89,3 +89,54 @@ Unverified until the batch build: in the integrator's `work/integrate/Veel`, `ca
 Nothing here needs the build: `veel_time` is pure Rust and runs fully in `just check`. No other crate uses it yet (1a-04).
 
 Unverified until the batch build: in the integrator's `work/integrate/Veel`, `PROPTEST_CASES=4096 cargo test -p veel_time --locked --release` prints `test result: ok. 9 passed`, `test result: ok. 11 passed` and `test result: ok. 1 passed`, and `just verify` passes.
+
+## Review (agent/review-veel-1a)
+
+November 15, 2026, by a reviewer that wrote none of this, at `b7c8a29` (1a-02; 1a-01 at `eead26c`, with `b7c8a29`'s narrowing of the boundary test read too). Every run below was on copies of my own: a detached worktree (`Annilay/work/tmp/review-veel-1a/Veel`, removed afterwards) and a scratch cargo harness outside the tree that calls `veel_time` by path. Scowr (`554dd9a`, still its HEAD) and Null were only read. Nothing was built beyond Veel's own crates, through the build guard.
+
+**`just check`** in my worktree at `b7c8a29`: exit 0, `check: passed`. `veel_syntax` 3 + 15 + 1 doc test, `veel_time` 9 + 11 + 1 doc test, 0 failed.
+
+### 1a-02 `veel_time`: approved
+
+- **An independent oracle.** A Python `fractions` model of spec section 6, written from the spec and not from the code, against `Clock::frames`, `duration` and `range` on **3,066 words**: 70 by hand and 3,000 random ones over 8 rates × 8 timecode rates (`24`, `25`, `30`, `50`, `24000/1001`, `30000/1001`, `48000/1001`, `60000/1001`), with starts at `00`, `01` and `02:00:00:00`. **0 differences** in the frame, the two inexact neighbours or the error code. My cases include:
+  - At `30000/1001`: `1001ms` and `1.001s` are 30, and so is `0001.0010000000s` (leading and trailing zeros). `1s` is inexact (29 or `1.001s`). `-0.001s` is inexact between -1 and 0. `-1000ms` is inexact between -30 and -29. `999999999999999999ms` is exactly 29970029970029970. `999999999999999999s` is `veel-range`, since it is about 3·10¹⁹ frames and past `i64`. `01:00:00:00` is 108000, `23:59:59:29` is 2591999 and `999999:59:59:29` is 107999999999. `:30` and `:60` minutes are `veel-type`. With `start=01:00:00:00`, `00:59:59:29` is before frame 0.
+  - At `24000/1001`: `1001ms` is 24, `12.012s` is 288, `12s` is inexact (287 or `12.012s`) and `:24` is refused.
+  - Across rates: a 24000/1001 source timecode in a 30000/1001 sequence at `start-timecode 01:00:00:00` gives `01:00:00:04` as 5 and `01:00:00:01` inexact (1.25). `01:00:00:04..+00:00:00:08` is `5..15`. A 30000/1001 timecode at 25 gives `00:00:01:00` as 25.025, inexact, and `00:00:40:00` as exactly 1001. A 60000/1001 timecode `:01` in a 30000/1001 sequence is inexact (half a frame).
+  - Ranges: `0..+1.001s` is `0..30` and `1001ms..2002ms` is `30..60`. `1001ms..+1s` is inexact in its duration. `10..5` and `5..+-6` are `veel-range`. `5..5` and `-10..+5` (`-10..-5`) are accepted.
+- **Control 1, a break of my own** (not the author's halves-up): a timecode converted through its nominal base (`index / 30` seconds at 30000/1001, the classic NTSC mistake) instead of the real rate. **2 property tests fail** (`ntsc_timecode_names_its_frame`, `a_source_timecode_at_another_rate_is_exact_or_an_error`), and the oracle shows **435 differences**. The 9 unit tests still pass: the 108,000-frame unit test checks `Timecode::count`, not `Clock::frames`. Restored, 0 differences.
+- **Control 2:** the 18-digit limit lifted. Unit test `time_words` fails, and the harness shows why the limit matters: `99999999999999999999` silently becomes frame 7766279631452241919 (nit 3). Restored.
+- "Done when" holds: property tests pass, including the `30000/1001` boundaries. Nothing in the crate rounds (`grep -i round` finds only prose).
+
+**The register-free choices under "Found".** I would send none back:
+
+- *A timecode duration counts from `00:00:00:00`.* Keep. It is the only reading under which `+00:00:05:00` is five timecode seconds whatever the start, and position timecodes stay absolute as section 6 says. 1a-03's slice section should say it in one sentence.
+- *Negative positions and empty ranges are read.* Keep. Section 5 lists `-12` as frames, and where an element may sit is the checker's. If 1a-04 refuses an empty clip or a negative `at`, each needs its own negative case.
+- *18 digits.* Keep: every conversion fits `i128` and the oracle found no overflow. But see nit 1 for the message.
+- *Provisional codes.* Keep until 1a-04 writes `codes::ALL`. Then, by section 14's "never an existing code whose meaning differs" (S97), it should confirm that `veel-range` (a backwards range, a timecode before frame 0, a value too large) and `veel-type` (a malformed time, range or rate word, a timecode field out of range) each carry one meaning, or split them. "Too large" is the likeliest to need a code of its own. `NotExactRate` as `veel-time-inexact` matches section 14's own example.
+
+**Nits** (not sent back):
+
+1. `TooLarge` says "too large for a frame count" for `0.000000000000000001s`, `3003.000000000000000ms` and `0000000000000000001`, which are small or exact. The limit counts leading and trailing zeros. A message saying "more than 18 digits" would be true of all of them.
+2. A bare `1.0` is read as frame 1. Section 5's frames are integers; `veel-type` (or `veel-time-inexact`'s fix `1`) may be the stricter reading.
+3. `Time::parse` casts with `as i64` (`compiler/veel_time/src/lib.rs:319`, `324`, `325`), safe only because of `MAX_DIGITS` (control 2). `i64::try_from` would make the limit belt and braces.
+4. The timecode hours and frames fields take 1 to 6 digits (`00:00:00:5`, `1:00:00:00`) and print back padded. That is harmless until write-back, which should keep the line's own text (1a-04).
+5. Decimal rates: `30.0` gives "30.0 is not exact; write 30", odd for an exact value. The hundredth window maps `29.96` to `30000/1001`.
+
+### 1a-01 `veel_syntax`: approved
+
+- **UI tests** pass (the golden test and its meta-tests in the 15 integration tests).
+- **A broken file of my own** (`review-broken.veel`, removed afterwards) had reserved parentheses, a string property key, a camelCase key, a string node name, an unclosed string, a stray `}`, `key = value` and a bare `\u{1F600}`. It gave **10 diagnostics: 5 `veel-syntax` and 5 `veel-name`**. None carried Scowr's code (`grep -ci scowr` on its `.stderr`: 0), and Scowr's examples were reworded. The golden test passed with it blessed. The two meta-tests failed as designed: no first-line comment, and the broken-case count is pinned at 9.
+- **Control 3:** `scowr_errors.workspace = true` planted in `compiler/veel_time/Cargo.toml`. `boundary::only_veel_syntax_names_scowr` fails. Restored.
+- **Only `veel_syntax` names a Scowr crate.** `find . -name Cargo.toml | xargs grep -i scowr` lists:
+  - the root manifest: its two path dependencies and a comment;
+  - `compiler/veel_syntax/Cargo.toml`.
+
+  Elsewhere `scowr` appears only in prose: `deny.toml`'s comment and `veel_time`'s module doc. `b7c8a29`'s narrowing (crate identifiers outside `//` and `#` lines) still catches a manifest entry, a renamed dependency (`package = "scowr_…"`) and a `use`, and lets prose mention Scowr. That is right.
+- `KNOWN`'s 22 messages were read against Scowr `554dd9a`, which is still Scowr's HEAD.
+- **A string name is an error.** Keep. It is word for word what Null's `null_syntax/src/names.rs:126–132` does (V50), and the strict side is the one 1b-05 can relax. Section 4's "a name that is not a word … is a string" and section 16's open row are where 1b-05 reconciles it.
+
+**Nits** (not sent back):
+
+6. A bare `\u{1F600}` gives two `veel-name` errors (`\u`, `1F600`) for one mistake (section 14: one mistake, one error). That is recovery, 1a-12.
+7. The boundary test walks `compiler/*` and the root manifest. 1a-12's `fuzz/` crate would sit outside it, so 1a-12 should extend the walk or depend on `veel_syntax` only.
+8. The UI meta-test pins 3 good and 9 broken cases, so every new case edits two numbers. This is deliberate, but rigid.
