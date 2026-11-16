@@ -14,6 +14,14 @@ check:
     export PYTHONDONTWRITEBYTECODE=1
     python3 tools/check-record.py start $$
     python3 tools/check-record.py selftest
+    python3 tools/check-watch.py selftest
+    python3 tools/scowr.py selftest
+    # Warns, naming both commits, when ../Scowr is not the commit Veel last passed with (B-12).
+    python3 tools/scowr.py check
+    # Says when a compile waits for a slot of the build guard, and ends with the time waited (B-24).
+    python3 tools/check-watch.py watch $$ &
+    watcher=$!
+    trap 'kill "$watcher" 2>/dev/null || true' EXIT
     python3 tools/build-guard.py wait
     cargo fmt --check
     if [ -f fuzz/Cargo.toml ]; then
@@ -28,6 +36,11 @@ check:
       cargo deny --offline --manifest-path fuzz/Cargo.toml check licenses bans sources
     fi
     python3 tools/check-record.py pass $$
+    python3 tools/scowr.py passed
+    kill "$watcher" 2>/dev/null || true
+    wait "$watcher" || true
+    # The time against tools/check-budget.txt; over it prints OVER and still passes (B-24).
+    python3 tools/check-watch.py time "$SECONDS"
     echo "check: passed"
 
 # Only the crates a change touches and those that depend on them, against main (--list prints them); its pass lets a code commit through only on an agent/* branch in work/wt/
@@ -44,6 +57,10 @@ verify:
     # Annilay's crates built against this checkout, when they exist beside it (from 1a-06).
     tools/annilay-crosscheck.sh Veel
     @echo "verify: passed"
+
+# Record the Scowr commit the last passing `just check` here used, in tools/scowr-commit (then check again and commit)
+scowr-record:
+    python3 tools/scowr.py record
 
 # Format this workspace's crates (never `--all`, which would rewrite Scowr's files)
 fmt:
