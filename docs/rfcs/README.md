@@ -18,8 +18,8 @@ No proposal is needed for:
 
 1. Copy [0000-template.md](0000-template.md) to `NNNN-short-name.md`, with the next free number.
 2. Fill it in: the problem with a real example, the design with files before and after, what breaks, the migration, and the alternatives.
-3. Add a row to Annilay's task board (`../Annilay/docs/TASKS.md`) naming the proposal, so it is decided rather than forgotten.
-4. **The decision.** RL decides, or the lead under RL's standing instruction (Annilay's `AGENTS.md`, "Decisions and gates"). The decision is recorded in Annilay's `docs/DECISIONS.md` with its V-number, and in the proposal's status line.
+3. Add a row to Annilay's board (`../Annilay/docs/BOARD.md`), severity decision, naming the proposal, so it is decided rather than forgotten.
+4. **The decision.** RL decides, or the lead under RL's standing instruction (Annilay's `AGENTS.md`, "RL's decisions are gates"). The decision is recorded in Annilay's `docs/DECISIONS.md` with its V-number, and in the proposal's status line.
 5. **If accepted:**
    - the change is written into the spec and `CHANGELOG.md`, naming the proposal;
    - the code follows, with tests;
