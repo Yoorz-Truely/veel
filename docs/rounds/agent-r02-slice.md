@@ -67,4 +67,10 @@ Elements: line 4 (no version), 22 (`version="2"`), 49 (`version="3"`, loaded).
 
 ## The check
 
-To be filled with the final `just check` run.
+- `just affected` (veel_schema, veel_syntax, veel_time): first run stopped at Clippy (`needless_borrow` in `tests/corpus.rs`, fixed); second run passed on tree `b7bf547ede27`, 1,098 s wall, nearly all of it `build-guard.py wait` under heavy thermal pressure (load 21 to 11 on 18 cores, 2 of 4 compile slots, other areas' clang builds running). Code committed on that pass (`215377c`).
+- `just check` on the committed tree, November 16, 2026, 13:57: **exit 0**, 6.36 s real (5.87 s user, 5.22 s sys; compiled crates were warm from the affected run), 58 tests, licence gate clean; thermal pressure moderate, load 7.5 before and 7.9 after on 18 cores, the guard at 2 of 2 slots with 2 clang and 1 rustc running machine-wide (not this check's).
+
+## Next
+
+- 1a-04 checks `tests/slice/` in full with `veel check`, gives the crossfade's two errors their codes, and decides how the spec's fragment in section 8 is checked (proposed row 1).
+- 1b-04 compares `veel_schema::slice::QTBLEND` with the generated schema and settles bounds; 1b-05 confirms the `ease` and choice words.
