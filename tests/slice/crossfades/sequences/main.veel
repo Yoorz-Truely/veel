@@ -1,0 +1,17 @@
+// sequences/main.veel: three clips joined by two crossfades, one of an odd length
+source @walk "Walk" media="media/walk.mov" rate=25 len=120s
+
+sequence @main "Main" {
+  rate 25
+  size [1920 1080]
+
+  track @v1 video {
+    clip @one from=@walk 0..+4s at 0 {
+      crossfade 13          // frames 93..106: @two from 7 frames before the cut, @one 6 after
+    }
+    clip @two from=@walk 10s..+4s at 4s {
+      crossfade 1s          // 25 frames: 13 before the cut at 8s, 12 after
+    }
+    clip @three from=@walk 20s..+4s at 8s
+  }
+}
