@@ -28,6 +28,10 @@ One case per diagnostic code, named after the code: a file, or a project folder 
 
 Each file must come back from the lossless syntax tree byte for byte, comments, spacing and spelling included, and lower to the same model when printed in canonical form. Every corpus file and example is a round-trip case too.
 
+## `slice/`
+
+One folder per example, each a slice project as the spec's section 17 describes it: a folder of `.veel` files read as one project, the first line of each naming its path in the folder. `two-clips/` and `picture-in-picture/` are the section's worked examples, byte for byte. Since 1a-03, `veel_syntax`'s spec-example test (`compiler/veel_syntax/tests/spec_examples.rs`) parses every file with no diagnostic, and `veel_schema`'s corpus test (`compiler/veel_schema/tests/corpus.rs`) fails on a name the slice schema does not hold; from 1a-04, `veel check` checks each folder in full.
+
 ## `corpus/`
 
 Each folder is a whole project laid out by Veelindy, with its manifest. The corpus is used by every other test, by the documentation and to teach AI, so it is kept correct to the letter. A coverage test fails when a kind or attribute of the schema has no example (1d-07).

@@ -1,0 +1,8 @@
+// sequences/main.veel: the least a slice project holds, one source cut once
+source @shot "Shot 1" media="media/shot-1.mov" rate=25 len=10s
+
+sequence @main "Main" rate=25 size=[1920 1080] {
+  track @v1 video {
+    clip @shot-1 from=@shot 0..+10s at 0
+  }
+}

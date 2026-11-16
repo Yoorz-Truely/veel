@@ -1,0 +1,57 @@
+// main.veel: every parameter of the slice's effect, set and keyframed, every ease, and
+// attributes both on their owner's line and as child lines
+source @still-life "Still life" media="media/still-life.mov" rate=24 len=00:05:00:00 start-timecode=01:00:00:00 hash=sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+
+sequence @grid "Every parameter" rate=24 size=[3840 2160] {
+  timecode non-drop
+
+  track @v1 video {
+    // Each parameter set once, on the effect's line and as child lines.
+    clip @plain from=@still-life 01:00:00:00..+48 at 0 {
+      effect @all qtblend compositing=multiply rotation=-12.5 {
+        rect [960 540 1920 1080 0.5]
+        rotate-anchor [0 0]
+        distort
+      }
+    }
+
+    // Each animated parameter keyframed; rotation through every ease.
+    clip @eases from=@still-life 01:00:10:00..+60 at 48 {
+      effect @moves qtblend {
+        distort off
+        rect time=clip {
+          key 0  [0 0 3840 2160]
+          key 1s [480 270 2880 1620 50%] ease=smooth-natural
+          key 59 [960 540 1920 1080 0%]
+        }
+        rotate-anchor {
+          key 0   [50% 50%]
+          key 2s  [0% 100%] ease=discrete
+        }
+        rotation {
+          key 0  0deg
+          key 4  15deg ease=discrete
+          key 8  30deg ease=smooth
+          key 12 45deg ease=smooth-natural
+          key 16 60deg ease=bounce-in
+          key 20 75deg ease=bounce-out
+          key 24 90deg ease=cubic-in
+          key 28 105deg ease=cubic-out
+          key 32 120deg ease=exponential-in
+          key 36 135deg ease=exponential-out
+          key 40 150deg ease=circular-in
+          key 44 165deg ease=circular-out
+          key 48 180deg ease=elastic-in
+          key 52 195deg ease=elastic-out
+          key 56 -360
+        }
+      }
+    }
+
+    // Two effects in one stack, applied in the block's order.
+    clip @modes from=@still-life 01:01:00:00..+2s at 108 {
+      effect @lighter qtblend { compositing screen }
+      effect @inverted qtblend { compositing difference }
+    }
+  }
+}

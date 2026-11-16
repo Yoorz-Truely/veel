@@ -24,7 +24,7 @@ The examples are illustrative until 1a-03. From then on every example is checked
 
 ## 3. A first look
 
-```veel
+```veel (1d-03)
 // veelindy.veel
 package "harbor-doc" {
   kind project
@@ -34,7 +34,7 @@ package "harbor-doc" {
 }
 ```
 
-```veel
+```veel (1d-06a)
 // sources/interviews.veel
 source @interview-a "Interview A" {
   media "media/9f21c4….mov"
@@ -51,7 +51,7 @@ source @drone "Drone 04" {
 }
 ```
 
-```veel
+```veel (1d-06b)
 // sequences/main.veel
 sequence @main "Main" {
   rate 25
@@ -92,7 +92,7 @@ sequence @main "Main" {
 }
 ```
 
-```veel
+```veel (1d-06f)
 // captions/en.veel
 captions @en "English" sequence=@main lang=en {
   cue 01:00:01:00..01:00:03:12 "We came here in the winter."
@@ -240,7 +240,7 @@ effect @push qtblend {
 
 **Patterns** (V25) are Veel's own: they apply one treatment to many existing clips in one line, each clip keeping its own overridable handle. Null has no counterpart, so their spelling is decided by an RFC in 1d-01:
 
-```veel
+```veel (1d-02)
 // illustrative only: the spelling is settled in 1d-01
 pattern @talking-head-grade {
   effect lift-gamma-gain { gain-r 1.02; gain-b 0.98 }
@@ -291,7 +291,7 @@ Severities are error, warning and note, as in Null (V19, corrected November 15, 
 
 | Question | Settled in |
 | --- | --- |
-| The slice's exact kind and attribute spellings | 1a-03 |
+| The slice's exact kind and attribute spellings | **Settled** in 1a-03: section 17 |
 | How Kdenlive parameter names that are not kebab-case words map (strings, or a mapping table) | 1b-05 |
 | Keyframe `ease` names, from Kdenlive's 14 keyframe types | 1b-05 |
 | Named abstractions over asset ids (a `transform` short form over `qtblend`, a `gain [r g b]` list over `gain-r`, `gain-g`, `gain-b`) | 1d-01 |
@@ -300,3 +300,178 @@ Severities are error, warning and note, as in Null (V19, corrected November 15, 
 | Bounds on parameters: errors or notes, and how they print. Scowr's RFC 0001 (Crescend's G6, proposed November 15, 2026) adds typed inclusive bounds as errors; Null makes a value beyond an engine's range a note. If Veel mirrors RFC 0001, it must not print an inclusive bound with `..`, which means half-open here, and Kdenlive's XML limits are often only a slider's | 1b-04, after RL's answer at G6 |
 | Whether captions live in their sequence's file or their own by default | 1d-01 |
 | The stream map and channel layout forms for multi-stream sources | 1d-03 |
+
+## 17. The slice (phase 1a)
+
+Settled by task 1a-03 on November 16, 2026, as the lead's call under RL's delegation, for RL to overturn. The slice is the part of Veel that phase 1a builds end to end ([blueprint 02](../../../Annilay/docs/blueprints/02-slice.md)): one source used by independently identified clips, on a sequence's video tracks, with one keyframed effect and a crossfade. This section says which kinds, attributes and value forms the slice takes and how each is spelled; what they mean is the rest of this spec. Its schema is `veel_schema`'s `slice` module, written by hand from this section and from Kdenlive's asset file; its corpus is `tests/slice/`, one project folder per example. Anything not listed here is not in the slice, and the slice's check (1a-04) reports it as unknown, with the nearest name it does know.
+
+### The slice project
+
+A slice project is a folder of `.veel` files, read as one project: any file may hold any element, and a handle defined in one file is found from every other, with no imports (V15). Handles are kebab-case, one namespace per kind (section 7). Veelindy's manifest, `veelindy.veel`, may sit at the folder's root; Veel's check leaves it to Veelindy, whose check is a stub in phase 1a, and the corpus folders have none. The slice's check does not open media: a source's rate and length are what its file says, as a probe writes them once at import (Veelindy, section 5).
+
+### Kinds
+
+| Kind | Written | Holds | In Kdenlive |
+| --- | --- | --- | --- |
+| `source` | `source @handle "Name"`, at the top of a file | `media` (required), `hash`, `rate` (required), `len` (required), `start-timecode` | A bin clip of one audio-video file |
+| `sequence` | `sequence @handle "Name"`, at the top of a file | `rate` (required), `size` (required), one `timecode` line, `track` lines | A timeline: a tractor with its `kdenlive:uuid` |
+| `timecode` | `timecode non-drop start=<timecode>`, in a sequence | How the sequence counts timecode, and the timecode of its frame 0 | The project's timecode setting and the timeline's start |
+| `track` | `track @handle video "Name"`, in a sequence | `clip` lines | A timeline track |
+| `clip` | `clip @handle from=@source <range> at <position>`, in a track | `effect` lines, then at most one `crossfade` | A timeline clip, an instance of a bin clip (V13) |
+| `effect` | `effect @handle qtblend`, in a clip | The effect's parameters | An effect in the clip's stack (`EffectStackModel`) |
+| `crossfade` | `crossfade <length>`, in a clip | Nothing more | A same-track mix with the default dissolve, `luma` |
+| `key` | `key <time> <value> ease=<type>`, in a parameter's block | Nothing more | A keyframe of the parameter's `KeyframeModel` |
+
+- A display name is an optional string after the handle (`"Name"`); a `track`'s comes after its kind word.
+- Every attribute may be written on its owner's line as `name=value` or as a child line, `name value`, which mean the same (section 4); `at` and `len` may also be written as a keyword, a space and the value. A switch is a child line: its name alone means `on`, and `distort off` turns it off, as in Null (`null-v0.md:184`).
+- Handles are required on `source`, `sequence`, `track`, `clip` and `effect`. Each is unique in the project for its kind, except an effect's, which is unique within its clip and addressed as `@a/@push` (section 7). `timecode`, `crossfade` and `key` take none: a key is known by its place in its block (section 7; 1b-02 settles place against time).
+- Only `video` tracks are in the slice. A clip of an audio-video source places its picture only; audio tracks, linked audio and `packed` tracks come with 1d-06b.
+
+### Attributes and their values
+
+| Owner | Attribute | Value | When left out |
+| --- | --- | --- | --- |
+| `source` | `media` | A path string, from the project's folder: `"media/interview.mov"` | Required |
+| `source` | `hash` | `sha256:` and 64 lowercase hexadecimal digits (V10) | No hash recorded |
+| `source` | `rate` | A rate: `25`, `30000/1001`; a decimal such as `29.97` is an error (section 6) | Required |
+| `source` | `len` | The medium's length at its own rate: `600s`, `250ms`, or a timecode length, `00:20:00:00`. A bare integer is not taken, since no sequence encloses a source to give it a rate | Required |
+| `source` | `start-timecode` | A timecode, at the source's rate | `00:00:00:00` |
+| `sequence` | `rate` | A rate | Required |
+| `sequence` | `size` | `[width height]`, whole pixels; pixels are square and frames progressive | Required |
+| `sequence` | `timecode` | `non-drop`, then `start=` a timecode | `timecode non-drop start=00:00:00:00` |
+| `clip` | `from` | The handle of a `source` | Required |
+| `clip` | (its argument) | The source range, `in..out` or `in..+length` | Required |
+| `clip` | `at` | The sequence position of the clip's first frame | Required |
+| `key` | `ease` | One of the 14 keyframe types below | `linear` |
+| a keyframe block | `time` | `clip` | `clip` |
+
+**Time.** The slice reads the forms `veel_time` reads in phase 1a: frames (a bare integer, at the sequence's rate), `s`, `ms`, and non-drop timecode; drop-frame counting, `smp`, `min` and `h` come with 1c-01. Each form is converted to whole frames by one exact rule, and **a value that does not land on a whole frame is a `veel-time-inexact` error naming the nearest exact choices, never rounded** (section 6). By place:
+
+- **A sequence position** (`at`): frames, `s` or `ms` from frame 0, or a timecode of the sequence, which counts from its `start=`: with `start=01:00:00:00` at 25 frames per second, `at 01:00:05:00` is `at 125`, and `at 00:59:59:00` is before frame 0, an error.
+- **A source range** (a clip's argument): its ends are offsets into the source, a timecode of the source (at its rate, from its `start-timecode`), `s` or `ms` from the source's first frame, or frames at the sequence's rate; a length after `+` is frames, `s`, `ms`, or a timecode length. The range is half-open (V21), lands on whole sequence frames, starts at or after the source's first frame and ends at or before its `len`. The clip's length is the range's.
+- **A timecode written as a length** (a source's `len`, or after `+`) counts from `00:00:00:00` at the rate of its place: `+00:00:02:00` is two seconds.
+- **A key's time** is clip-local (V22): frames, `s` or `ms` from the clip's first frame. A timecode, which names an absolute frame, is an error there. `time=clip` may be written and is the default; `time=sequence` and `time=source` come with 1d-06c.
+
+**Placement.** Tracks are written top to bottom as the timeline shows them: the first `track` of a sequence is its topmost. Every clip has an `at` and its range's length, so it covers the sequence's frames `[at, at + length)`; clips may be written in any order and keep the author's, and two clips of one track may not share a frame (`veel-overlap`, section 14). The slice's tracks are positioned, never `packed` (V43).
+
+**Crossfade.** `crossfade N` in clip A dissolves A into the clip B whose `at` is A's end, on A's track; with no such B it is an error. `N` is a length in the sequence's frames (frames, `s` or `ms`, at least one frame). The written ranges and positions stay those of the cut, and the mix is centred on it as Kdenlive centres a new mix (`TimelineModel::mixClip`, `src/timeline2/model/timelinemodel.cpp:1153–1155` at `v26.08.3`, with the default asset `luma`, `timelinemodel.hpp:964`): B starts ⌈N/2⌉ frames before the cut and A runs ⌊N/2⌋ frames past it, so the mix covers the sequence's frames `[cut − ⌈N/2⌉, cut + ⌊N/2⌋)`. A's source must hold the ⌊N/2⌋ frames after A's range and B's the ⌈N/2⌉ frames before B's (`veel-range` otherwise), and the mixes at B's two ends may not overlap: the part of A's crossfade after the cut and the part of B's own crossfade before its end together fit in B's length. The bridge turns the cut into Kdenlive's overlapping clips in one place, and write-back turns them back.
+
+**Values of the effect's parameters.** A bare number is the parameter's stored unit, as in Null (`null-v0.md:193`), and a unit word converts to it exactly:
+
+- **A rectangle** is `[x y w h]` in pixels of the sequence's frame, numbers, with an optional fifth item, the opacity: a number from 0 to 1 as stored, or a percent (`85%` is `0.85`). Left out, the opacity is `1`.
+- **A point** is `[x y]`, each a number as stored or a percent of it (`[50% 50%]` is `[0.5 0.5]`).
+- **An angle** is a number of degrees, bare or with `deg` (`2.5deg`).
+- **A choice** is one of the parameter's words below.
+- **A switch** is `on` or `off`, or its name alone for `on`.
+
+A parameter that takes keyframes takes either one value (`rotation 2.5deg`) or a block of `key` lines, never both. Keys are written in strictly increasing time from 0, and each key holds a value of the parameter's form. A key at or past the clip's end is not refused by the slice: Kdenlive's own handling of such keys on a trim (V22) is read by the census (0-08).
+
+**Bounds.** The schema records each bound the asset file gives, in the parameter's own unit, both ends inclusive, in the form of Scowr's RFC 0001 (G6). Whether a value outside one is an error, and how the bound prints, is 1b-04's (section 16), so the slice's check does not report it. Kdenlive's bounds are sometimes only a slider's: its `rotation` runs from −360 to 360, where MLT's own metadata for `qtblend` says 0 to 360.
+
+**Defaults.** A parameter left out has the value Kdenlive gives a new effect (section 12), which the census measures (0-08); until it does, the asset file's `default` stands in, as the table below gives it.
+
+### Keyframe types
+
+The `ease=` words are Kdenlive's 14 keyframe types (`KeyframeType::KeyframeEnum`, `src/definitions.h:213–228` at `v26.08.3`), each named by the MLT keyframe type Kdenlive maps it to, in kebab-case: `linear`, `discrete`, `smooth` (Kdenlive's `Curve`), `smooth-natural` (`CurveSmooth`), `bounce-in`, `bounce-out`, `cubic-in`, `cubic-out`, `exponential-in`, `exponential-out`, `circular-in`, `circular-out`, `elastic-in`, `elastic-out`. A key's `ease` says how the value moves from it to the next key. These names are the slice's; 1b-05 confirms them over the whole schema and closes the "Open" row for them.
+
+### The effect: Transform (`qtblend`)
+
+The slice's one effect is Kdenlive's Transform, MLT's `qtblend` filter, chosen over `brightness` because it is the effect a timeline gesture in Kdenlive's monitor writes (position, size, rotation), so write-back (1a-09) is proved on a geometry value rather than a single number, and because the slice's examples were already written with it. Its parameters were read by hand from `data/effects/qtblend.xml` at Kdenlive's tag `v26.08.3`. The file holds three `<effect>` elements for one service, at lines 4 (no version), 22 (version 2) and 49 (version 3). Kdenlive loads the highest version the installed MLT filter supports (`src/effects/effectsrepository.cpp:193–198` and `src/assets/abstractassetsrepository.ipp:406–413` at the tag); MLT's `qtblend` in Annilay's pinned dependencies is version 5, so Kdenlive loads element 3, and a Veel file sets its five parameters. Element 2's sixth parameter, `rotate_center`, is in the schema but not in the slice.
+
+| Veel | Kdenlive | Kdenlive's type | Veel's form | Keyframes | File's default | File's bounds | Read from (`v26.08.3`) | Declared in |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| `compositing` | `compositing` | `list` | A choice (below) | No | `0`, `alpha-blend` | None | `qtblend.xml:56` | Lines 14, 29, 56 |
+| `distort` | `distort` | `bool` | A switch | No | `0`, `off` | `0` to `1` (the switch's two values) | `qtblend.xml:60` | Lines 18, 33, 60 |
+| `rect` | `rect` | `animatedrect` | A rectangle | Yes | `0 0 %width %height 1`, the whole frame | None | `qtblend.xml:63` | Lines 8, 39, 63 |
+| `rotate-anchor` | `rotate_anchor` | `animatedpoint` | A point, as stored (Kdenlive shows it times 100, `factor="100 100"`, with `%`) | Yes | `0.5 0.5 0 0`: the point `[0.5 0.5]` | `[-1 -1]` to `[1 1]` | `qtblend.xml:66` | Lines 42, 66 |
+| `rotation` | `rotation` | `animated` | An angle | Yes | `0` | `-360deg` to `360deg` | `qtblend.xml:69` | Lines 11, 45, 69 |
+| `rotate-center` (not in the slice) | `rotate_center` | `bool` | A switch | No | `1`, `on` | `0` to `1` | `qtblend.xml:36` | Line 36 |
+
+`compositing`'s words are Kdenlive's labels (`paramlistdisplay`, `qtblend.xml:58`) in kebab-case, each standing for the stored value in the same place of `paramlist` (line 56), Qt's composition modes: `alpha-blend` (0), `xor` (11), `plus` (12), `multiply` (13), `screen` (14), `overlay` (15), `darken` (16), `lighten` (17), `color-dodge` (18), `color-burn` (19), `hard-light` (20), `soft-light` (21), `difference` (22), `exclusion` (23), `bitwise-or` (24), `bitwise-and` (25), `bitwise-xor` (26), `bitwise-nor` (27), `bitwise-nand` (28), `bitwise-not-xor` (29), `destination-in` (6), `destination-out` (8). The numbers themselves are not words of the parameter, as Null writes enum items by name, never by number (`null-v0.md:196`); 1b-05 settles how every list parameter of the schema is named.
+
+### Worked example: two clips of one source
+
+One file, `tests/slice/two-clips/sequences/main.veel` in the corpus. The source is 600 seconds long at 25 frames per second. Clip `@a` takes source frames 250 to 375 (`00:00:10:00..+5s`, half-open) and places them at sequence frames 0 to 125; `@b` takes source frames 1500 to 1600 and places them at 125 to 225, so the two clips meet with no gap. `@a`'s Transform pushes in over its first 50 frames, its keys in clip time, and its crossfade of 12 frames covers sequence frames 119 to 131: `@b` starts 6 frames before the cut, reading source frames 1494 to 1500 first, and `@a` runs 6 past it, to source frame 381. With `start=01:00:00:00`, frame 0 of the sequence shows as `01:00:00:00`, and `at 5s` could as well be written `at 01:00:05:00` or `at 125`.
+
+```veel
+// sequences/main.veel
+source @interview "Interview" {
+  media "media/interview.mov"
+  rate 25
+  len 600s
+}
+
+sequence @main "Main" {
+  rate 25
+  size [1920 1080]
+  timecode non-drop start=01:00:00:00
+
+  track @v1 video "Picture" {
+    clip @a from=@interview 00:00:10:00..+5s at 0 {
+      effect @push qtblend {
+        rect {
+          key 0  [0 0 1920 1080]
+          key 2s [-96 -54 2112 1188] ease=cubic-in
+        }
+      }
+      crossfade 12
+    }
+    clip @b from=@interview 00:01:00:00..+4s at 5s
+  }
+}
+```
+
+### Worked example: a picture in picture at 30000/1001
+
+Two files, in the corpus as `tests/slice/picture-in-picture/`. The sequence runs at `30000/1001`; the drone was shot at `60000/1001`, two of its frames to each of the sequence's. Its source timecode `00:00:12:00` is its frame 720, 12.012 seconds, which is the sequence's frame 360 exactly; a source timecode on an odd drone frame lands between two sequence frames, a `veel-time-inexact` error. `@inset` is on the upper track, `@v2`, so it shows over `@host-a` from sequence frame 60 (`01:00:02:00`) to 210. Its Transform puts it in the upper right at 85 % opacity, turned 2.5 degrees, blended with `screen`. The host's clips take its timecode, which starts at `14:30:00:00`: `@host-a` is its frames 1950 to 2160. `@host-b`'s push-in reaches its last key at frame 270 of the clip; written `key 9s`, it would be 269.73 frames at this rate, an error naming `269` and `9.009s`.
+
+```veel
+// sources/footage.veel
+source @host "Host" {
+  media "media/host.mov"
+  rate 30000/1001
+  len 00:20:00:00
+  start-timecode 14:30:00:00
+}
+
+source @drone "Drone 04" {
+  media "media/drone-04.mp4"
+  rate 60000/1001
+  len 00:02:00:00
+}
+```
+
+```veel
+// sequences/main.veel
+sequence @main "Main" {
+  rate 30000/1001
+  size [1920 1080]
+  timecode non-drop start=01:00:00:00
+
+  track @v2 video "Inset" {
+    clip @inset from=@drone 00:00:12:00..+150 at 01:00:02:00 {
+      effect @pip qtblend {
+        rect [1248 72 576 324 85%]
+        rotation 2.5deg
+        compositing screen
+      }
+    }
+  }
+
+  track @v1 video "Host" {
+    clip @host-a from=@host 14:31:05:00..14:31:12:00 at 0
+    clip @host-b from=@host 14:35:40:00..+300 at 210 {
+      effect @push-in qtblend {
+        rect {
+          key 0   [0 0 1920 1080]
+          key 270 [-96 -54 2112 1188] ease=smooth
+        }
+      }
+    }
+  }
+}
+```
+
+### The corpus
+
+`tests/slice/` holds one folder per example, each a slice project: `one-clip` (the least a project holds), `two-clips` and `picture-in-picture` (the worked examples above, byte for byte), `every-parameter` (each of Transform's five parameters set and keyframed, every `ease`, attributes on their owner's line and as child lines, two effects in one stack) and `crossfades` (two crossfades in a row, one of an odd length and one in seconds). `veel_syntax`'s spec-example test parses every example of this spec and every file of the corpus, and fails on any diagnostic; `veel_schema`'s corpus test fails on a name, effect, `ease` or choice word the slice schema does not hold. Checking the corpus in full is 1a-04's `veel check`.

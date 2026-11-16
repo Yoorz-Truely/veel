@@ -1,13 +1,14 @@
 //! The slice's syntax: Scowr's shared syntax expresses every construct of the phase 1a slice
-//! (ranges, timecode, keyword attributes, keyframe lists), every round-trip file and spec example
-//! prints back byte for byte with no diagnostics, and kebab-case names are enforced with fixes.
+//! (ranges, timecode, keyword attributes, keyframe lists), every round-trip file prints back byte
+//! for byte with no diagnostics, and kebab-case names are enforced with fixes. The spec's
+//! examples and the slice corpus are `spec_examples.rs`'s.
 
 use std::path::{Path, PathBuf};
 
 use veel_syntax::ast::{Entry, Node, Value};
 use veel_syntax::{FileId, TokenKind, apply_edits, diagnostics, dump, lex, names, parse};
 
-fn root() -> PathBuf {
+pub(crate) fn root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
@@ -22,17 +23,29 @@ fn roundtrip_files() -> Vec<PathBuf> {
     files
 }
 
-/// Lexes, parses and prints `text` back, asserting no diagnostics and that the tree's tokens are
-/// the lexer's and cover every byte.
-fn assert_lossless_and_clean(name: &str, text: &str) {
+/// What is wrong with `text` as a Veel file: its diagnostics, a lexer token missing from the
+/// tree, or a print that differs from the text. Empty when it parses clean and prints back byte
+/// for byte, with the tree's tokens the lexer's, covering every byte.
+pub(crate) fn problems(name: &str, text: &str) -> Vec<String> {
+    let mut out = Vec::new();
     let (tokens, errors) = lex(text);
-    assert!(errors.is_empty(), "{name}: {errors:?}");
+    if !errors.is_empty() {
+        out.push(format!("{name}: lexer errors {errors:?}"));
+    }
     let lexed: usize = tokens.iter().map(|t| t.len as usize).sum();
-    assert_eq!(lexed, text.len(), "{name}");
-
+    if lexed != text.len() {
+        out.push(format!(
+            "{name}: the tokens cover {lexed} of {} bytes",
+            text.len()
+        ));
+    }
     let file = parse(text);
-    let found = diagnostics(&file, FileId(0));
-    assert!(found.is_empty(), "{name}: {found:#?}");
+    for d in diagnostics(&file, FileId(0)) {
+        out.push(format!(
+            "{name}: byte {}: error[{}]: {}",
+            d.primary.span.start, d.code, d.message
+        ));
+    }
     let tree_tokens: Vec<_> = file
         .root()
         .tokens()
@@ -40,8 +53,19 @@ fn assert_lossless_and_clean(name: &str, text: &str) {
         .map(|t| (t.kind, t.text.len()))
         .collect();
     let lexer_tokens: Vec<_> = tokens.iter().map(|t| (t.kind, t.len as usize)).collect();
-    assert_eq!(tree_tokens, lexer_tokens, "{name}");
-    assert_eq!(file.print(), text, "{name}");
+    if tree_tokens != lexer_tokens {
+        out.push(format!("{name}: the tree's tokens are not the lexer's"));
+    }
+    if file.print() != text {
+        out.push(format!("{name}: does not print back byte for byte"));
+    }
+    out
+}
+
+/// Asserts `text` has no [`problems`].
+pub(crate) fn assert_lossless_and_clean(name: &str, text: &str) {
+    let found = problems(name, text);
+    assert!(found.is_empty(), "{}", found.join("\n"));
 }
 
 #[test]
@@ -51,36 +75,6 @@ fn every_roundtrip_file_prints_back_with_no_diagnostics() {
     for path in files {
         let text = std::fs::read_to_string(&path).unwrap();
         assert_lossless_and_clean(&path.display().to_string(), &text);
-    }
-}
-
-/// The ```veel blocks of the spec, with the line each starts on.
-fn spec_examples() -> Vec<(usize, String)> {
-    let spec = std::fs::read_to_string(root().join("docs/spec/veel-v0.md")).unwrap();
-    let mut out = Vec::new();
-    let mut current: Option<(usize, String)> = None;
-    for (i, line) in spec.lines().enumerate() {
-        match &mut current {
-            None if line == "```veel" || line.starts_with("```veel (") => {
-                current = Some((i + 2, String::new()));
-            }
-            Some(_) if line == "```" => out.push(current.take().unwrap()),
-            Some((_, text)) => {
-                text.push_str(line);
-                text.push('\n');
-            }
-            None => {}
-        }
-    }
-    out
-}
-
-#[test]
-fn every_spec_example_is_expressed_by_the_shared_syntax() {
-    let examples = spec_examples();
-    assert_eq!(examples.len(), 6, "the spec's veel blocks");
-    for (line, text) in examples {
-        assert_lossless_and_clean(&format!("docs/spec/veel-v0.md:{line}"), &text);
     }
 }
 
