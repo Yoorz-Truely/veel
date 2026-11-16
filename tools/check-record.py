@@ -24,6 +24,8 @@ the first import of a vendor branch is a merge Git made by itself. Docs: Annilay
 docs/agents/tooling.md ("The check record").
 """
 
+import concurrent.futures
+import functools
 import os
 import pathlib
 import shutil
@@ -44,8 +46,15 @@ def git(*args, cwd=None, env=None, check=True):
     return r.stdout
 
 
+@functools.cache
+def paths(cwd=None):
+    """The work tree's top, the Git directory and the index, absolute, from one call per folder."""
+    out = git("rev-parse", "--path-format=absolute", "--show-toplevel", "--git-dir", "--git-path", "index", cwd=cwd)
+    return tuple(pathlib.Path(p) for p in out.splitlines())
+
+
 def top(cwd=None):
-    return pathlib.Path(git("rev-parse", "--show-toplevel", cwd=cwd).strip())
+    return paths(cwd)[0]
 
 
 def store(cwd=None):
@@ -78,7 +87,7 @@ def is_code(path, sau):
 def working_tree(cwd=None):
     """The tree of every file not ignored, as `git add -A` would stage it, without touching the
     real index: a copy of it takes the changes, so unchanged files are not hashed again."""
-    index = pathlib.Path(git("rev-parse", "--path-format=absolute", "--git-path", "index", cwd=cwd).strip())
+    index = paths(cwd)[2]
     with tempfile.TemporaryDirectory() as d:
         tmp = pathlib.Path(d) / "index"
         if index.exists():
@@ -161,7 +170,7 @@ def is_clean_merge(git_dir, sau, cwd=None):
 
 def require(cwd=None):
     root = top(cwd)
-    git_dir = pathlib.Path(git("rev-parse", "--path-format=absolute", "--git-dir", cwd=cwd).strip())
+    git_dir = paths(cwd)[1]
     if is_clean_merge(git_dir, is_sau(root), cwd):
         return 0  # Git's own merge of commits checked on their own branches
     staged = [p for p in git("diff", "--cached", "--name-only", "-z", cwd=cwd).split("\0") if p]
@@ -450,9 +459,11 @@ def selftest():
         if ok != want:
             failures.append(f"{what}: {'allowed' if ok else 'refused'}, expected {'allowed' if want else 'refused'}")
 
-    for sau in (False, True):
-        scenario(sau, me, expect)
-    fixer_order(me, expect)
+    # The three runs share nothing but `expect`, so they run side by side: each waits on Git.
+    with concurrent.futures.ThreadPoolExecutor(3) as pool:
+        runs = [pool.submit(scenario, False, me, expect), pool.submit(scenario, True, me, expect), pool.submit(fixer_order, me, expect)]
+        for r in runs:
+            r.result()
 
     root = top()
     app = app_dir(root)
