@@ -30,6 +30,11 @@ check:
     python3 tools/check-record.py pass $$
     echo "check: passed"
 
+# Only the crates a change touches and those that depend on them, against main (--list prints them); its pass lets a code commit through only on an agent/* branch in work/wt/
+[positional-arguments]
+affected *args:
+    python3 tools/affected.py "$@"
+
 # The integrator's gate, once per merged batch (V45), and nightly: check, deeper property tests,
 # fuzzing, and Annilay's crates built against this checkout. Workers run `check` only.
 verify:
