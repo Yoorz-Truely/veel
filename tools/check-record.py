@@ -1,30 +1,38 @@
 #!/usr/bin/env python3
-"""Commit code only after `just check` passed on that very tree (task 0-10).
+"""Commit code only after `just check` passed on that very tree.
 
 `just check` calls `start <key>` first and `pass <key>` last. `pass` records the tree the check
 ran on in `work/check/passed`, but only if no code changed while it ran: documents may change
-meanwhile (board commits and reports land in Sau's main checkout all day, task 0-13), since
-they may differ from a checked tree anyway. The
-commit-msg hook calls `require`: by then pre-commit's fixers have re-staged what they changed,
-so the index is what will be committed. It refuses a commit that touches code unless its staged
-tree has such a record. "The tree" is every file that is not ignored, as `git add -A` would
-stage it, tracked or not; documents may differ from it, code may not. A merge Git made by itself
-(MERGE_HEAD one commit, not HEAD or its ancestor, merging with no conflict, the staged code
-exactly that merge's) and documents-only commits need no record; a conflict resolved by hand
-needs `just check` like any commit.
+meanwhile (board commits and reports land in the main checkout all day), since they may differ
+from a checked tree anyway. The commit-msg hook calls `require`: by then pre-commit's fixers
+have re-staged what they changed, so the index is what will be committed. It refuses a commit
+that touches code unless its staged tree has such a record. "The tree" is every file that is not
+ignored, as `git add -A` would stage it, tracked or not; documents may differ from it, code may
+not. A merge Git made by itself (MERGE_HEAD one commit, not HEAD or its ancestor, merging with
+no conflict, the staged code exactly that merge's) and documents-only commits need no record; a
+conflict resolved by hand needs `just check` like any commit.
+
+`just affected` runs only the tests a change touches; it calls `start <key>` and, at its end,
+`pass-affected <key>`, which records the tree the same way in `work/check/affected`. Such a pass
+lets code through only on an `agent/*` branch of a worktree under `work/wt/`: an area runs its
+own tests and those its change affects, and the full check runs on the round's combined merge.
+On `main`, on any other branch, or in a checkout outside `work/wt/`, code needs `just check`.
 
 Not code: `*.md` and everything under `docs/`; in Null, Cosmósis, Veel and Veelindy also images
 (`.png`, `.jpg`, `.jpeg`, `.gif`, `.svg`, `.webp`). Sau and Annilay build their branding images into
 the app, so there they are code.
 
-Usage: check-record.py start <key> | pass <key> | require | selftest
+Usage: check-record.py start <key> | pass <key> | pass-affected <key> | require | selftest
 This copy is held by Annilay (`annilay/tools/`), Veel and Veelindy (`tools/`), and Annilay's check
-keeps the three equal. It is Sau's file (`sau/tools/`, also in Null and Cosmósis) with two changes:
-it knows both application layouts (`APPS`), and its `merge-tree` allows unrelated histories, so
-the first import of a vendor branch is a merge Git made by itself. Docs: Annilay's
+keeps the three equal. It is Sau's file (`sau/tools/`, also in Null and Cosmósis) with three
+changes: it knows both application layouts (`APPS`), its `merge-tree` allows unrelated histories,
+so the first import of a vendor branch is a merge Git made by itself, and it takes an `affected`
+pass on an agent's branch. Docs: Annilay's
 docs/agents/tooling.md ("The check record").
 """
 
+import concurrent.futures
+import functools
 import os
 import pathlib
 import shutil
@@ -45,8 +53,15 @@ def git(*args, cwd=None, env=None, check=True):
     return r.stdout
 
 
+@functools.cache
+def paths(cwd=None):
+    """The work tree's top, the Git directory and the index, absolute, from one call per folder."""
+    out = git("rev-parse", "--path-format=absolute", "--show-toplevel", "--git-dir", "--git-path", "index", cwd=cwd)
+    return tuple(pathlib.Path(p) for p in out.splitlines())
+
+
 def top(cwd=None):
-    return pathlib.Path(git("rev-parse", "--show-toplevel", cwd=cwd).strip())
+    return paths(cwd)[0]
 
 
 def store(cwd=None):
@@ -79,7 +94,7 @@ def is_code(path, sau):
 def working_tree(cwd=None):
     """The tree of every file not ignored, as `git add -A` would stage it, without touching the
     real index: a copy of it takes the changes, so unchanged files are not hashed again."""
-    index = pathlib.Path(git("rev-parse", "--path-format=absolute", "--git-path", "index", cwd=cwd).strip())
+    index = paths(cwd)[2]
     with tempfile.TemporaryDirectory() as d:
         tmp = pathlib.Path(d) / "index"
         if index.exists():
@@ -96,7 +111,9 @@ def start(key, cwd=None):
     return 0
 
 
-def passed(key, cwd=None, quiet=False):
+def passed(key, cwd=None, quiet=False, log="passed"):
+    """Record the tree `start <key>` saw in work/check/<log>: "passed" for `just check`, "affected"
+    for `just affected`."""
     s = store(cwd)
     marker = s / f"started-{key}"
     if not marker.exists():
@@ -106,7 +123,7 @@ def passed(key, cwd=None, quiet=False):
     marker.unlink()
     now = working_tree(cwd)
     if now != began:
-        # Only code that changed while the check ran stops the record (task 0-13): documents may
+        # Only code that changed while the check ran stops the record: documents may
         # differ from a checked tree anyway, so the tree the check began on is recorded.
         sau = is_sau(top(cwd))
         changed = [p for p in git("diff", "--name-only", "-z", began, now, cwd=cwd).split("\0") if p]
@@ -122,14 +139,37 @@ def passed(key, cwd=None, quiet=False):
         if not quiet:
             print(f"check-record: documents changed while the check ran ({', '.join(changed[:3])}); the code did not")
         now = began
-    log = s / "passed"
+    log = s / log
     lines = log.read_text().splitlines() if log.exists() else []
     lines = [x for x in lines if not x.startswith(now + " ")][-(KEEP - 1) :]
     lines.append(f"{now} {time.strftime('%Y-%m-%dT%H:%M:%S')}")
     log.write_text("\n".join(lines) + "\n")
     if not quiet:
-        print(f"check-record: passed on tree {now[:12]}")
+        print(f"check-record: {'passed' if log.name == 'passed' else 'affected tests passed'} on tree {now[:12]}")
     return 0
+
+
+def agent_worktree(root, cwd=None):
+    """Whether this checkout is an agent's: an `agent/*` branch, in a worktree under work/wt/."""
+    branch = git("symbolic-ref", "--short", "-q", "HEAD", cwd=cwd, check=False).strip()
+    return branch.startswith("agent/") and "/work/wt/" in f"{root.as_posix()}/"
+
+
+def recorded(root, name):
+    log = root / "work" / "check" / name
+    return [x.split()[0] for x in log.read_text().splitlines() if x.strip()] if log.exists() else []
+
+
+def covers(trees, tree, sau, cwd=None):
+    """Whether one of these trees is this tree, or the same code with only documents different
+    (a report written after the check, or one left for its own commit)."""
+    if tree in trees:
+        return True
+    for passed_tree in reversed(trees[-CHECKED_AGAINST:]):
+        diff = git("diff", "--name-only", "-z", passed_tree, tree, cwd=cwd, check=False).split("\0")
+        if not any(is_code(p, sau) for p in diff if p):
+            return True
+    return False
 
 
 def is_clean_merge(git_dir, sau, cwd=None):
@@ -162,7 +202,7 @@ def is_clean_merge(git_dir, sau, cwd=None):
 
 def require(cwd=None):
     root = top(cwd)
-    git_dir = pathlib.Path(git("rev-parse", "--path-format=absolute", "--git-dir", cwd=cwd).strip())
+    git_dir = paths(cwd)[1]
     if is_clean_merge(git_dir, is_sau(root), cwd):
         return 0  # Git's own merge of commits checked on their own branches
     staged = [p for p in git("diff", "--cached", "--name-only", "-z", cwd=cwd).split("\0") if p]
@@ -171,21 +211,25 @@ def require(cwd=None):
     if not code:
         return 0
     tree = git("write-tree", cwd=cwd).strip()
-    log = root / "work" / "check" / "passed"
-    trees = [x.split()[0] for x in log.read_text().splitlines() if x.strip()] if log.exists() else []
-    if tree in trees:
+    trees = recorded(root, "passed")
+    if covers(trees, tree, sau, cwd):
         return 0
-    # The same code as a tree that passed, with only documents different (a report written
-    # after the check, or one left for its own commit): the code is what was checked.
-    for passed_tree in reversed(trees[-CHECKED_AGAINST:]):
-        diff = git("diff", "--name-only", "-z", passed_tree, tree, cwd=cwd, check=False).split("\0")
-        if not any(is_code(p, sau) for p in diff if p):
-            return 0
+    # `just affected` on an agent's branch: its own tests and those its change touches.
+    affected = recorded(root, "affected")
+    agent = agent_worktree(root, cwd)
+    if agent and covers(affected, tree, sau, cwd):
+        return 0
     print(
         "check-record: this commit changes code, and `just check` has not passed on the tree it "
         f"commits ({len(code)} code file(s), such as {code[0]}).",
         file=sys.stderr,
     )
+    if not agent and covers(affected, tree, sau, cwd):
+        print(
+            "  `just affected` passed on it, which counts only on an agent/* branch in a worktree under "
+            "work/wt/; here the commit needs `just check`.",
+            file=sys.stderr,
+        )
     if trees:
         diff = [p for p in git("diff", "--name-only", trees[-1], tree, cwd=cwd).splitlines() if p]
         print("  It differs from the last tree that passed in: " + ", ".join(diff[:8]) + (" …" if len(diff) > 8 else ""), file=sys.stderr)
@@ -264,8 +308,8 @@ def scenario(sau, me, expect):
         (repo / "scratch.rs").unlink()
         check(edit_during=lambda: src.write_text("fn a() { d() }\n"))
         expect(f"{tag}: code edited while its check ran", commit("code"), False)
-        # Documents changed while the check ran, as board commits and reports land in Sau's main
-        # checkout (task 0-13): the check is still recorded, and the code commits.
+        # Documents changed while the check ran, as board commits and reports land in the main
+        # checkout: the check is still recorded, and the code commits.
         src.write_text("fn a() { during() }\n")
         board = repo / "docs" / "TASKS.md"
         report = repo / "docs" / "rounds" / "agent-x.md"
@@ -436,12 +480,64 @@ def fixer_order(me, expect):
         expect("lefthook: the same resolution after a check", commit("resolve"), True)
 
 
+def affected_pass(me, expect):
+    """An `affected` pass lets code through on an agent/* branch of a worktree under work/wt/, and
+    nowhere else: not on main, not on another branch, not in a checkout outside work/wt/."""
+    with tempfile.TemporaryDirectory() as d:
+        for repo in (pathlib.Path(d) / "work" / "wt" / "area" / "repo", pathlib.Path(d) / "elsewhere" / "repo"):
+            repo.mkdir(parents=True)
+
+            def run(*a, repo=repo):
+                return git(*a, cwd=repo)
+
+            run("init", "-q", "-b", "main")
+            for k, v in (("user.name", "test"), ("user.email", "test@example.invalid"), ("commit.gpgsign", "false"), ("core.hooksPath", ".git/hooks")):
+                run("config", k, v)
+            (repo / ".gitignore").write_text("/work/\n")
+            hook = repo / ".git" / "hooks" / "pre-commit"
+            hook.parent.mkdir(parents=True, exist_ok=True)
+            hook.write_text(f"#!/bin/sh\nexec {sys.executable} {me} require\n")
+            hook.chmod(0o755)
+            src = repo / "src.rs"
+
+            def commit(msg, repo=repo):
+                run("add", "-A")
+                return subprocess.run(["git", "commit", "-q", "-m", msg], cwd=repo, capture_output=True, text=True).returncode == 0
+
+            def checked(log, repo=repo):
+                start("t", cwd=repo)
+                passed("t", cwd=repo, quiet=True, log=log)
+
+            src.write_text("fn a() {}\n")
+            checked("passed")
+            commit("first")
+            if "wt" in repo.parts:
+                src.write_text("fn a() { on_main() }\n")
+                checked("affected")
+                expect("affected: code on main after `just affected`, in a worktree under work/wt/", commit("code"), False)
+                checked("passed")
+                expect("affected: the same code on main once `just check` passed", commit("code"), True)
+                run("checkout", "-q", "-b", "agent/area")
+                src.write_text("fn a() { on_agent() }\n")
+                checked("affected")
+                expect("affected: code on an agent/* branch under work/wt/ after `just affected`", commit("code"), True)
+                run("checkout", "-q", "-b", "feature")
+                src.write_text("fn a() { on_feature() }\n")
+                checked("affected")
+                expect("affected: code on a branch not agent/* after `just affected`", commit("code"), False)
+            else:
+                run("checkout", "-q", "-b", "agent/area")
+                src.write_text("fn a() { outside() }\n")
+                checked("affected")
+                expect("affected: code on an agent/* branch outside work/wt/ after `just affected`", commit("code"), False)
+
+
 def selftest():
     """Commits in throwaway repositories: refused without a check, after a failed check and after
     one more edit; allowed after a passing check and for documents alone; merges exempt. Then
     this repository's hooks and check must call this file."""
     # Run from a hook or a rebase, git's GIT_DIR, GIT_INDEX_FILE and the rest would send the
-    # throwaway repositories' commits to the real one: clear every GIT_* first (task 0-33).
+    # throwaway repositories' commits to the real one: clear every GIT_* first.
     for key in [k for k in os.environ if k.startswith("GIT_")]:
         del os.environ[key]
     me = pathlib.Path(__file__).resolve()
@@ -451,9 +547,12 @@ def selftest():
         if ok != want:
             failures.append(f"{what}: {'allowed' if ok else 'refused'}, expected {'allowed' if want else 'refused'}")
 
-    for sau in (False, True):
-        scenario(sau, me, expect)
-    fixer_order(me, expect)
+    # The three runs share nothing but `expect`, so they run side by side: each waits on Git.
+    with concurrent.futures.ThreadPoolExecutor(4) as pool:
+        runs = [pool.submit(scenario, False, me, expect), pool.submit(scenario, True, me, expect), pool.submit(fixer_order, me, expect)]
+        runs.append(pool.submit(affected_pass, me, expect))
+        for r in runs:
+            r.result()
 
     root = top()
     app = app_dir(root)
@@ -479,7 +578,7 @@ def selftest():
     if not failures:
         print(
             "check-record: selftest passed (refused without a check, after a failure, after an edit; "
-            "allowed after a pass and for documents; merges exempt; hooks wired)"
+            "allowed after a pass and for documents; merges exempt; an affected pass only on an agent's branch; hooks wired)"
         )
     return 1 if failures else 0
 
@@ -490,6 +589,8 @@ def main():
         return start(args[1])
     if args[:1] == ["pass"] and len(args) == 2:
         return passed(args[1])
+    if args[:1] == ["pass-affected"] and len(args) == 2:
+        return passed(args[1], log="affected")
     if args == ["require"]:
         return require()
     if args == ["selftest"]:
