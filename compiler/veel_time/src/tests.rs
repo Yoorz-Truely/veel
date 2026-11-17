@@ -213,3 +213,28 @@ fn writing_back() {
     assert_eq!(main.write(-1, Unit::Timecode, true), None);
     assert_eq!(main.duration("00:00:04:00"), Ok(100));
 }
+
+/// Annilay's B-118: a frame whose exact decimal has more digits than a time word may hold is not
+/// written in `s` or `ms`, so every word `write` gives reads back; an inexact error's choice falls
+/// back to frames. Both cases were found at random by the property tests.
+#[test]
+fn writing_back_never_gives_a_word_too_long_to_read() {
+    let odd = Clock::new(rate("32768/113"));
+    assert_eq!(odd.write(292_857, Unit::Seconds, false), None);
+    assert_eq!(odd.write(292_857, Unit::Millis, false), None);
+    assert!(matches!(
+        odd.frames("1009.913360595703125s"),
+        Err(TimeError::TooLarge { .. })
+    ));
+    for f in [0, 1, 4096, 292_857, -292_857, 999_999] {
+        for unit in [Unit::Frames, Unit::Seconds, Unit::Millis] {
+            if let Some(word) = odd.write(f, unit, false) {
+                assert_eq!(odd.frames(&word), Ok(f), "{word}");
+            }
+        }
+    }
+    assert_eq!(
+        odd.write(4096, Unit::Seconds, false).as_deref(),
+        Some("14.125s")
+    );
+}
