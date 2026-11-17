@@ -34,3 +34,11 @@ debug = false
 [profile.test]
 debug = "line-tables-only"
 incremental = false
+
+# No stripping in release builds (`cargo test --release`, the verify's deeper property tests).
+# With no debug info asked for, Cargo strips it by default with the toolchain's rust-objcopy,
+# which dyld cannot start on this Mac (it looks for libLLVM.dylib in its own ../lib, not the
+# toolchain's lib/): every test binary warned of a SIGABRT and left a crash report in
+# ~/Library/Logs/DiagnosticReports (Annilay's board row B-128). `bench` inherits this.
+[profile.release]
+strip = false
