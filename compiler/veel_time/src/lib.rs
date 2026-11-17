@@ -507,16 +507,21 @@ impl Clock {
     }
 
     /// The word in `unit` that names exactly `frames`, if there is one: always in frames, in `s`
-    /// and `ms` when the time is a finite decimal, and in timecode when the frame falls on a
-    /// timecode frame at or after the start (from `00:00:00:00` for a duration).
+    /// and `ms` when the time is a finite decimal of at most 18 digits (the most [`Time::parse`]
+    /// reads back), and in timecode when the frame falls on a timecode frame at or after the start
+    /// (from `00:00:00:00` for a duration).
     pub fn write(&self, frames: i64, unit: Unit, duration: bool) -> Option<String> {
         let seconds = self.rate.seconds(frames);
+        let readable = |decimal: String| {
+            let digits = decimal.bytes().filter(u8::is_ascii_digit).count();
+            (digits <= MAX_DIGITS).then_some(decimal)
+        };
         match unit {
             Unit::Frames => Some(frames.to_string()),
-            Unit::Seconds => Some(format!("{}s", seconds.to_decimal()?)),
+            Unit::Seconds => Some(format!("{}s", readable(seconds.to_decimal()?)?)),
             Unit::Millis => Some(format!(
                 "{}ms",
-                seconds.checked_mul(Ratio::int(1000))?.to_decimal()?
+                readable(seconds.checked_mul(Ratio::int(1000))?.to_decimal()?)?
             )),
             Unit::Timecode => {
                 let index = self.timecode_rate.frames_exact(seconds)?;
