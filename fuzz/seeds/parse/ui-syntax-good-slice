@@ -1,0 +1,18 @@
+@€// A good file: the phase 1a slice of blueprint 02, every construct, no diagnostics.
+source @interview "Interview" media="corpus/media/interview.mov" rate=25
+
+sequence @main "Main" {
+  rate 25
+  size [1920 1080]
+  timecode non-drop start=01:00:00:00
+
+  track @v1 video {
+    clip @a from=@interview 00:00:10:00..+5s at 0 {
+      effect @a-push qtblend {
+        rect { key 0 [0 0 1920 1080]; key 2s [-96 -54 2112 1188] ease=cubic-in }
+      }
+      crossfade 12
+    }
+    clip @b from=@interview 00:01:00:00..+4s at 5s
+  }
+}

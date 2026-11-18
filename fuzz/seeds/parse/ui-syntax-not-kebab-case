@@ -1,0 +1,8 @@
+@€// Names that are not kebab-case: node names, property keys, a handle as a name, a name as a string.
+source @drone "Drone 04" Start_Timecode=10:00:00:00 {
+  colorSpace rec709
+  field_order top
+  "pixel aspect" 1
+  @Bad_Name 1
+  hash sha256:41d07a
+}

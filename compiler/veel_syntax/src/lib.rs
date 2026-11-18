@@ -9,8 +9,9 @@
 //!
 //! What this crate adds is Veel's side of the boundary: diagnostics carry Veel's code
 //! (`veel-syntax`, spec section 14) instead of Scowr's, with Veel's examples in their wording
-//! ([`messages`]); names are checked to be kebab-case (`veel-name`, module [`names`]); and
-//! [`dump`] prints a tree for tests. The meaning of a word (frames, timecode, ranges, handles,
+//! ([`messages`]); names are checked to be kebab-case (`veel-name`, module [`names`]);
+//! [`dump`] prints a tree for tests; and [`invariants`] holds what must hold for any text, broken
+//! or not, which the recovery tests and the fuzz target (`fuzz/`) check. The meaning of a word (frames, timecode, ranges, handles,
 //! kinds) comes from Veel's schema and `veel_time`, never from the shared syntax.
 //!
 //! # Use
@@ -38,6 +39,7 @@ pub use scowr_syntax::{
     SyntaxElement, SyntaxFix, SyntaxNode, SyntaxToken, TokenKind, ast, escape, raw_value, unescape,
 };
 
+pub mod invariants;
 pub mod messages;
 pub mod names;
 

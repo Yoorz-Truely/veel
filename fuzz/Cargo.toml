@@ -1,0 +1,26 @@
+# Fuzz targets for Veel, run by `tools/fuzz.sh` (`just verify`) with cargo-fuzz on a nightly
+# toolchain (task 1a-12). Its own workspace, not a member of the root one, so the stable gates
+# never build it; `just check` formats and licence-checks this manifest.
+[package]
+name = "veel-fuzz"
+version = "0.0.0"
+edition = "2024"
+license = "MIT"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+veel_syntax = { path = "../compiler/veel_syntax" }
+
+[[bin]]
+name = "parse"
+path = "fuzz_targets/parse.rs"
+test = false
+doc = false
+bench = false
+
+[workspace]
+members = ["."]

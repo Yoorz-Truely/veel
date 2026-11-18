@@ -1,0 +1,28 @@
+@€// sequences/main.veel
+sequence @main "Main" {
+  rate 30000/1001
+  size [1920 1080]
+  timecode non-drop start=01:00:00:00
+
+  track @v2 video "Inset" {
+    clip @inset from=@drone 00:00:12:00..+150 at 01:00:02:00 {
+      effect @pip qtblend {
+        rect [1248 72 576 324 85%]
+        rotation 2.5deg
+        compositing screen
+      }
+    }
+  }
+
+  track @v1 video "Host" {
+    clip @host-a from=@host 14:31:05:00..14:31:12:00 at 0
+    clip @host-b from=@host 14:35:40:00..+300 at 210 {
+      effect @push-in qtblend {
+        rect {
+          key 0   [0 0 1920 1080]
+          key 270 [-96 -54 2112 1188] ease=smooth
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,13 @@
+@€// sources/footage.veel
+source @host "Host" {
+  media "media/host.mov"
+  rate 30000/1001
+  len 00:20:00:00
+  start-timecode 14:30:00:00
+}
+
+source @drone "Drone 04" {
+  media "media/drone-04.mp4"
+  rate 60000/1001
+  len 00:02:00:00
+}
