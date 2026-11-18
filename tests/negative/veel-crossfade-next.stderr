@@ -1,0 +1,4 @@
+veel-crossfade-next.veel:7:17 error[veel-crossfade-next]: @a's crossfade has no clip to dissolve into: no clip on track @v1 starts at frame 50, where @a ends
+  note: the next clip on the track, @b, starts at frame 60; a crossfade joins clips that meet
+veel-crossfade-next.veel:10:17 error[veel-crossfade-next]: @b's crossfade has no clip to dissolve into: no clip on track @v1 starts at frame 110, where @b ends
+  note: no clip follows it on the track; remove the crossfade, or place the clip it dissolves into at its end

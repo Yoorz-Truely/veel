@@ -1,0 +1,15 @@
+// veel-unknown-property: properties, child lines and parameters their owner does not have
+source @shot "Shot" media="media/shot.mov" rate=25 len=60s {
+  hsh sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+}
+
+sequence @main "Main" rate=25 size=[1920 1080] {
+  track @v1 video {
+    clip @a from=@shot 0..+2s at 0 len 50 {
+      effect @push qtblend {
+        rotaton 5deg
+        rect [0 0 1920 1080] time=clip
+      }
+    }
+  }
+}

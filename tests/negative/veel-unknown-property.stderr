@@ -1,0 +1,6 @@
+veel-unknown-property.veel:3:3 error[veel-unknown-property]: source @shot has no property `hsh`; it takes `media`, `hash`, `rate`, `len` and `start-timecode`
+  fix: write `hash`
+veel-unknown-property.veel:8:36 error[veel-unknown-property]: clip @a has no property `len`; it takes `from` and `at`
+veel-unknown-property.veel:10:9 error[veel-unknown-property]: effect @push has no property `rotaton`; it takes `compositing`, `distort`, `rect`, `rotate-anchor` and `rotation`
+  fix: write `rotation`
+veel-unknown-property.veel:11:30 error[veel-unknown-property]: `rect`'s line has no property `time`; a block of keys may carry `time=`

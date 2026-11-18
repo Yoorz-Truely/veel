@@ -1,0 +1,4 @@
+veel-key-order.veel:11:15 error[veel-key-order]: this key, at frame 20 of the clip, is not after the key before it, at frame 25: keys are written in increasing time
+  veel-key-order.veel:10:15: the key before
+veel-key-order.veel:12:15 error[veel-key-order]: this key, at frame 20 of the clip, is not after the key before it, at frame 20: keys are written in increasing time
+  veel-key-order.veel:11:15: the key before

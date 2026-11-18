@@ -1,0 +1,17 @@
+// veel-key-order: keys not written in increasing time
+source @shot "Shot" media="media/shot.mov" rate=25 len=60s
+
+sequence @main "Main" rate=25 size=[1920 1080] {
+  track @v1 video {
+    clip @a from=@shot 0..+4s at 0 {
+      effect @push qtblend {
+        rotation {
+          key 0 0deg
+          key 1s 90deg
+          key 20 45deg
+          key 20 30deg
+        }
+      }
+    }
+  }
+}

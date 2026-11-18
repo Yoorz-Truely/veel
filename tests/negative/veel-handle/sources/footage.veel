@@ -1,0 +1,4 @@
+// sources/footage.veel: veel-handle, a handle defined in another file of the project
+source @interview "Interview" media="media/interview.mov" rate=25 len=60s
+
+source @Drone_04 "Drone" media="media/drone.mov" rate=25 len=60s

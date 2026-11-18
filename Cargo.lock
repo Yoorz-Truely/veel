@@ -144,6 +144,42 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "eaea85b334db583fe3274d12b4cd1880032beab409c0d774be044d4480ab9a94"
 
 [[package]]
+name = "veel_check"
+version = "0.0.0"
+dependencies = [
+ "veel_schema",
+ "veel_syntax",
+ "veel_time",
+]
+
+[[package]]
+name = "veel_cli"
+version = "0.0.0"
+dependencies = [
+ "veel_check",
+ "veel_print",
+]
+
+[[package]]
+name = "veel_edit"
+version = "0.0.0"
+dependencies = [
+ "proptest",
+ "veel_check",
+ "veel_syntax",
+ "veel_time",
+]
+
+[[package]]
+name = "veel_print"
+version = "0.0.0"
+dependencies = [
+ "veel_check",
+ "veel_schema",
+ "veel_syntax",
+]
+
+[[package]]
 name = "veel_schema"
 version = "0.0.0"
 dependencies = [

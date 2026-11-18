@@ -1,0 +1,6 @@
+veel-overlap.veel:7:5 error[veel-overlap]: clip @b overlaps @a by 25 frames on track @v1
+  veel-overlap.veel:6:5: @a covers frames 0 up to 100
+  fix: start @b at 4s, where @a ends
+veel-overlap.veel:11:5 error[veel-overlap]: clip @d overlaps @c by 15 frames on track @v2
+  veel-overlap.veel:10:5: @c covers frames 100 up to 150
+  fix: start @d at 150, where @c ends

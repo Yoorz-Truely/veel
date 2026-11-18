@@ -1,0 +1,6 @@
+veel-crossfade-overlap.veel:10:17 error[veel-crossfade-overlap]: the mixes at @b's two ends overlap: @a's crossfade runs 10 frames into @b, and @b's own starts 10 frames before its end, 20 frames in all; @b is 15 frames long
+  fix: shorten the crossfade to `10`
+veel-crossfade-overlap.veel:16:17 error[veel-crossfade-overlap]: @short's crossfade starts 10 frames before its end, but @short is 5 frames long
+  fix: shorten the crossfade to `10`
+veel-crossfade-overlap.veel:22:17 error[veel-crossfade-overlap]: @first's crossfade runs 12 frames into @tiny, which is 4 frames long
+  fix: shorten the crossfade to `0.36s`

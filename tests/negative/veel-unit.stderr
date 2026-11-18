@@ -1,0 +1,9 @@
+veel-unit.veel:2:56 error[veel-unit]: a source's length needs a unit: `1500` would be frames, and no sequence encloses a source to give them a rate
+  fix: write `00:01:00:00`, 1500 frames at 25
+veel-unit.veel:8:34 error[veel-unit]: `5sec`: `sec` is not a unit of time here; write frames, `s`, `ms` or timecode
+veel-unit.veel:11:18 error[veel-unit]: `rad` is not a unit of an angle, which is written bare or `deg`
+  fix: write `12`
+veel-unit.veel:12:19 error[veel-unit]: `%` is not a unit of a rectangle's width, which is written bare
+  fix: write `50`
+veel-unit.veel:14:17 error[veel-unit]: a crossfade's length is frames, `s` or `ms`; a timecode, `00:00:00:12`, names an absolute frame
+  fix: write `12`, its frames

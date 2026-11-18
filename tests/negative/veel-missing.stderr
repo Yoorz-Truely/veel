@@ -1,0 +1,8 @@
+veel-missing.veel:2:1 error[veel-missing]: source @shot has no `len`: add `len 600s` (the medium's length, as probed: no clip's range may run past it)
+veel-missing.veel:8:5 error[veel-missing]: clip @a has no `at`: add `at 0` (the sequence position of its first frame)
+veel-missing.veel:9:7 error[veel-missing]: the effect has no handle: write `effect @name`; a handle is required here
+veel-missing.veel:11:5 error[veel-missing]: clip @b has no source range: write it after the handle, as `0..+5s`
+veel-missing.veel:14:9 error[veel-missing]: `rect` has no value: write `rect [0 0 1920 1080]` or a block of keys
+veel-missing.veel:15:9 error[veel-missing]: `rotation`'s block holds no key: write `key 0 0deg` in it, or one value
+veel-missing.veel:18:7 error[veel-missing]: the crossfade has no length: write it after the kind, as `12`
+veel-missing.veel:21:3 error[veel-missing]: track @v2 has no track kind: write it after the handle, as `video`

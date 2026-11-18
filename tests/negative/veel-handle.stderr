@@ -1,0 +1,16 @@
+sequences/main.veel:6:18 error[veel-handle]: no source is `@intervew`; the project's sources are `@interview`
+  fix: write `@interview`
+sequences/main.veel:7:18 error[veel-handle]: `@main` is a sequence, not a source; the project's sources are `@interview`
+sequences/main.veel:8:18 error[veel-handle]: `interview` is not a handle: write the handle of a source, `@` and its name
+  fix: write `@interview`
+sequences/main.veel:9:10 error[veel-handle]: the clip handle `@a` is defined twice
+  sequences/main.veel:6:10: first defined here
+  fix: rename this one `@a-2`
+sequences/main.veel:11:14 error[veel-handle]: clip @a has two effects `@push`; an effect's handle is unique in its clip
+  sequences/main.veel:10:14: first defined here
+  fix: rename this one `@push-2`
+sources/footage.veel:2:8 error[veel-handle]: the source handle `@interview` is defined twice
+  sequences/main.veel:2:8: first defined here
+  fix: rename this one `@interview-2`
+sources/footage.veel:4:8 error[veel-handle]: `@Drone_04` is not a handle: a handle is `@` and a kebab-case name
+  fix: write `@drone-04`

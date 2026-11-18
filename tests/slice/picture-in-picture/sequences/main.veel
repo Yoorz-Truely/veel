@@ -7,9 +7,9 @@ sequence @main "Main" {
   track @v2 video "Inset" {
     clip @inset from=@drone 00:00:12:00..+150 at 01:00:02:00 {
       effect @pip qtblend {
+        compositing screen
         rect [1248 72 576 324 85%]
         rotation 2.5deg
-        compositing screen
       }
     }
   }
@@ -19,7 +19,7 @@ sequence @main "Main" {
     clip @host-b from=@host 14:35:40:00..+300 at 210 {
       effect @push-in qtblend {
         rect {
-          key 0   [0 0 1920 1080]
+          key 0 [0 0 1920 1080]
           key 270 [-96 -54 2112 1188] ease=smooth
         }
       }

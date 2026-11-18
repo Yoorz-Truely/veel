@@ -14,7 +14,7 @@ sequence @main "Main" {
     clip @a from=@interview 00:00:10:00..+5s at 0 {
       effect @push qtblend {
         rect {
-          key 0  [0 0 1920 1080]
+          key 0 [0 0 1920 1080]
           key 2s [-96 -54 2112 1188] ease=cubic-in
         }
       }

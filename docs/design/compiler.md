@@ -8,8 +8,8 @@ How Veel's compiler is laid out, crate by crate, under `compiler/`. Each crate i
 | `veel_time` | Rational rates, frames, samples, timecode, drop-frame display, half-open ranges, VFR maps, exact conversions | 1a (minimal), 1c |
 | `veel_value` | Typed values, units, exact float printing, colours, keyframe curves | 1a |
 | `veel_schema` | The element schema: the hand-written editorial core, plus the asset schema Annilay's `just schema` generates from Kdenlive's assets and commits in `schema/`. Veel reads only that file | 1a, 1b |
-| `veel_check` | Resolution of handles across files, types, overlaps, range validity, references | 1a |
-| `veel_fmt` / `veel_print` | Lossless formatter and canonical printer | 1a, 1d |
+| `veel_check` | Resolution of handles across files, types, overlaps, range validity, references; its own codes in `codes::ALL`, none of them `veel_syntax`'s; the project's model in whole frames | 1a |
+| `veel_print` | Lossless formatter (`format`, the layout) and canonical printer (`canonical`, the schema's order; defaults left out once the census measures them, Annilay's B-41) | 1a, 1d |
 | `veel_edit` | Tree patches that keep comments, units and abstract forms | 1a, 3 |
 | `veel_live` | Diff of two revisions by stable ID into native requests, and the inverse | 1a, 2, 3 |
 | `veel_kdenlive` | Lossless `.kdenlive` ↔ Veel conversion, with the `raw` fallback | 1d |

@@ -1,0 +1,2 @@
+veel-syntax.veel:2:60 error[veel-syntax]: this { is never closed; add } at the end of its block
+  fix: add } at the end of the file

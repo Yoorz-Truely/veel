@@ -1,0 +1,29 @@
+// veel-range: values of the right type outside what their place holds
+source @shot "Shot" media="media/shot.mov" rate=25 len=10s start-timecode=01:00:00:00
+
+sequence @main "Main" rate=25 size=[0 1080] {
+  timecode non-drop start=01:00:00:00
+  track @v1 video {
+    clip @past from=@shot 01:00:08:00..+4s at 0
+    clip @early from=@shot 00:59:59:00..+1s at 100
+    clip @empty from=@shot 0..0 at 200
+    clip @before from=@shot 0..+1s at 00:59:59:00
+    clip @negative from=@shot 0..+1s at -5
+  }
+  track @v2 video {
+    clip @shapes from=@shot 0..+2s at 0 {
+      effect @push qtblend {
+        rect {
+          key -1 [0 0 -1920 1080 150%]
+        }
+      }
+      crossfade 0
+    }
+  }
+  track @v3 video {
+    clip @end from=@shot 8s..10s at 0 {
+      crossfade 10
+    }
+    clip @start from=@shot 0..+2s at 50
+  }
+}

@@ -4,7 +4,7 @@ The tests that hold the compiler to the [specification](../docs/spec/veel-v0.md)
 
 | Folder | Holds | Proves | Arrives with |
 | --- | --- | --- | --- |
-| `ui/` | One `.veel` file per case, with its expected diagnostics in a `.stderr` file beside it, checked with the slice's schema. `ui/syntax/` holds the syntax's own cases, run by `veel_syntax` with no schema: good files (named `good-…`, an empty `.stderr`) and broken ones | Diagnostics: code, place and wording | 1a-01 (`ui/syntax/`), 1a-04 |
+| `ui/` | One `.veel` file per case, with its expected diagnostics in a `.stderr` file beside it, checked with the slice's schema. `ui/syntax/` holds the syntax's own cases, run by `veel_syntax` with no schema: good files (named `good-…`, an empty `.stderr`) and broken ones | Diagnostics: code, place and wording | 1a-01 (`ui/syntax/`); the checker's codes have their cases in `negative/` since 1a-04 |
 | `ui-spec/` | The same, checked with the whole schema generated from Kdenlive's assets | Diagnostics of every asset kind and parameter | 1b-04 |
 | `negative/` | One case per diagnostic code, with its expected diagnostics beside it | Every code, message and fix the spec lists | 1a-04 |
 | `roundtrip/` | Files that must print back byte for byte and lower to the same model. Until lowering exists (1a-04), `veel_syntax` checks that each prints back with no diagnostics | The lossless tree, the printing rule and lowering | 1a-01 |

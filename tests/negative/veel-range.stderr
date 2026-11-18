@@ -1,0 +1,13 @@
+veel-range.veel:4:37 error[veel-range]: a frame is at least 1 pixel wide and high
+veel-range.veel:7:27 error[veel-range]: `01:00:08:00..+4s` runs 50 frames past the end of @shot, which is 250 frames long here
+  fix: end it at the source's last frame: `01:00:08:00..+2s`
+veel-range.veel:8:28 error[veel-range]: `00:59:59:00` is before the timecode of frame 0, 01:00:00:00
+veel-range.veel:9:28 error[veel-range]: `0..0` holds no frame: a clip is at least one frame long
+veel-range.veel:10:39 error[veel-range]: `00:59:59:00` is before the timecode of frame 0, 01:00:00:00
+veel-range.veel:11:41 error[veel-range]: `-5` is before frame 0 of the sequence
+veel-range.veel:17:15 error[veel-range]: a key's time is not negative; `-1` is -1 frames
+veel-range.veel:17:23 error[veel-range]: width is at least 0 pixels; `-1920` is negative
+veel-range.veel:17:34 error[veel-range]: an opacity is from 0 to 1, or 0% to 100%; `150%` is outside it
+veel-range.veel:20:17 error[veel-range]: a crossfade's length is at least 1 frame; `0` is 0 frames
+veel-range.veel:25:17 error[veel-range]: the crossfade runs @end 5 frames past the cut, to frame 255 of its source, which is 250 frames long here
+veel-range.veel:25:17 error[veel-range]: the crossfade starts @start 5 frames before the cut, but its range starts 0 frames into its source

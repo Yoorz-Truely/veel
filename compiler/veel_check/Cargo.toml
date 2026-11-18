@@ -1,0 +1,22 @@
+[package]
+name = "veel_check"
+description = "Veel's checker for the phase 1a slice: names, kinds, types, units, handles, overlaps and ranges, each with a suggestion"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+rust-version.workspace = true
+# One test binary for the files in tests/ (as Null's crates, Sau's S69): tests/main.rs.
+autotests = false
+
+[dependencies]
+veel_schema.workspace = true
+veel_syntax.workspace = true
+veel_time.workspace = true
+
+[lints]
+workspace = true
+
+[[test]]
+name = "main"
+path = "tests/main.rs"

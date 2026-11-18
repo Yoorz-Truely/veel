@@ -134,6 +134,7 @@ The parser keeps every byte, comments and whitespace included, in a lossless tre
 | Colour | `#rrggbb`, `#rrggbbaa` | 8-bit sRGB as MLT stores it (`0xRRGGBBAA`), in CSS order; Kdenlive's `#AARRGGBB` is reordered in one place (V23, corrected November 15, 2026: Null's `#rrggbb` converts to linear floats and has no alpha, which MLT does not need). A grading value stays in the space its effect declares |
 | Size, rect, point | `[1920 1080]`, `[x y w h]` | Kdenlive's geometry types, in pixels of the sequence; `%` of the frame where the parameter allows it |
 | Enum | `cubic-in`, `rec709` | Kdenlive's or MLT's enum values, kebab-case |
+| Switch | `on`, `off`; the name alone on a line of its own (`distort`) | The parameter's boolean: `on` or `off`, and the name written alone means `on`, as in Null (`null-v0.md:184`) |
 | Handle | `@interview-a`, `@pkg:lt-name` | Section 7 |
 | Path | `"media/9f21c4….mov"` | A string, relative to the project folder |
 | Hash | `sha256:9f21c4…` | The content hash of a medium (V10) |
@@ -215,12 +216,21 @@ A track places its clips by absolute position by default: each `clip` has an `at
 ### Effects and keyframes
 
 ```veel
-effect @push qtblend {
-  rect time=clip {
-    key 0  [0 0 1920 1080]
-    key 2s [-96 -54 2112 1188] ease=cubic-in
+// sequences/main.veel: an effect in its clip, with the least project around it
+source @shot "Shot" media="media/shot.mov" rate=25 len 10s
+
+sequence @main "Main" rate=25 size=[1920 1080] {
+  track @v1 video {
+    clip @a from=@shot 0..+5s at 0 {
+      effect @push qtblend {
+        rect time=clip {
+          key 0 [0 0 1920 1080]
+          key 2s [-96 -54 2112 1188] ease=cubic-in
+        }
+        rotation 0deg
+      }
+    }
   }
-  rotation 0deg
 }
 ```
 
@@ -272,7 +282,7 @@ Files in `checks/` state what must hold for the project: no gaps on `@v1`, no ca
 
 ## 14. Diagnostics
 
-Every diagnostic has a stable code of its own (`veel-syntax`, `veel-name`, `veel-kind`, `veel-unknown-property`, `veel-type`, `veel-enum`, `veel-unit`, `veel-time-inexact`, `veel-overlap`, `veel-range`, `veel-handle`, `veel-readonly`, `veel-repeated-name`, …), a span, a message, and a suggestion where one exists. **Every new diagnostic gets a new code**, never an existing code whose meaning differs (S97); the codes are listed once, in `codes::ALL`, with one negative test each. Wording follows Null's rules (`null-v0.md:1219–1230`): the nearest choices first, one mistake gives one error, and a fix for `key = value`. Rendering is Scowr's `file:line:col error[code]: message`:
+Every diagnostic has a stable code of its own (`veel-syntax`, `veel-name`, `veel-kind`, `veel-unknown-property`, `veel-missing`, `veel-type`, `veel-enum`, `veel-unit`, `veel-time-inexact`, `veel-overlap`, `veel-range`, `veel-handle`, `veel-repeated`, `veel-key-order`, `veel-crossfade-next`, `veel-crossfade-overlap`, `veel-readonly`, `veel-repeated-name`, …), a span, a message, and a suggestion where one exists. **Every new diagnostic gets a new code**, never an existing code whose meaning differs (S97); the codes are listed once, in `codes::ALL` (the syntax's two in `veel_syntax`, the checker's in `veel_check`, no code in both), with one negative test each (`tests/negative/`). Wording follows Null's rules (`null-v0.md:1219–1230`): the nearest choices first, one mistake gives one error, and a fix for `key = value`. Rendering is Scowr's `file:line:col error[code]: message`:
 
 ```text
 sequences/main.veel:40:5 error[veel-overlap]: clip @b overlaps @a by 3 frames on track @v1
@@ -314,7 +324,7 @@ A slice project is a folder of `.veel` files, read as one project: any file may 
 | Kind | Written | Holds | In Kdenlive |
 | --- | --- | --- | --- |
 | `source` | `source @handle "Name"`, at the top of a file | `media` (required), `hash`, `rate` (required), `len` (required), `start-timecode` | A bin clip of one audio-video file |
-| `sequence` | `sequence @handle "Name"`, at the top of a file | `rate` (required), `size` (required), one `timecode` line, `track` lines | A timeline: a tractor with its `kdenlive:uuid` |
+| `sequence` | `sequence @handle "Name"`, at the top of a file | `rate` (required), `size` (required), at most one `timecode` line (left out, `timecode non-drop start=00:00:00:00`), `track` lines | A timeline: a tractor with its `kdenlive:uuid` |
 | `timecode` | `timecode non-drop start=<timecode>`, in a sequence | How the sequence counts timecode, and the timecode of its frame 0 | The project's timecode setting and the timeline's start |
 | `track` | `track @handle video "Name"`, in a sequence | `clip` lines | A timeline track |
 | `clip` | `clip @handle from=@source <range> at <position>`, in a track | `effect` lines, then at most one `crossfade` | A timeline clip, an instance of a bin clip (V13) |
@@ -354,11 +364,11 @@ A slice project is a folder of `.veel` files, read as one project: any file may 
 
 **Placement.** Tracks are written top to bottom as the timeline shows them: the first `track` of a sequence is its topmost. Every clip has an `at` and its range's length, so it covers the sequence's frames `[at, at + length)`; clips may be written in any order and keep the author's, and two clips of one track may not share a frame (`veel-overlap`, section 14). The slice's tracks are positioned, never `packed` (V43).
 
-**Crossfade.** `crossfade N` in clip A dissolves A into the clip B whose `at` is A's end, on A's track; with no such B it is an error. `N` is a length in the sequence's frames (frames, `s` or `ms`, at least one frame). The written ranges and positions stay those of the cut, and the mix is centred on it as Kdenlive centres a new mix (`TimelineModel::mixClip`, `src/timeline2/model/timelinemodel.cpp:1153–1155` at `v26.08.3`, with the default asset `luma`, `timelinemodel.hpp:964`): B starts ⌈N/2⌉ frames before the cut and A runs ⌊N/2⌋ frames past it, so the mix covers the sequence's frames `[cut − ⌈N/2⌉, cut + ⌊N/2⌋)`. A's source must hold the ⌊N/2⌋ frames after A's range and B's the ⌈N/2⌉ frames before B's (`veel-range` otherwise), and the mixes at B's two ends may not overlap: the part of A's crossfade after the cut and the part of B's own crossfade before its end together fit in B's length. The bridge turns the cut into Kdenlive's overlapping clips in one place, and write-back turns them back.
+**Crossfade.** `crossfade N` in clip A dissolves A into the clip B whose `at` is A's end, on A's track; with no such B it is an error (`veel-crossfade-next`). `N` is a length in the sequence's frames (frames, `s` or `ms`, at least one frame). The written ranges and positions stay those of the cut, and the mix is centred on it as Kdenlive centres a new mix (`TimelineModel::mixClip`, `src/timeline2/model/timelinemodel.cpp:1153–1155` at `v26.08.3`, with the default asset `luma`, `timelinemodel.hpp:964`): B starts ⌈N/2⌉ frames before the cut and A runs ⌊N/2⌋ frames past it, so the mix covers the sequence's frames `[cut − ⌈N/2⌉, cut + ⌊N/2⌋)`. A's source must hold the ⌊N/2⌋ frames after A's range and B's the ⌈N/2⌉ frames before B's (`veel-range` otherwise), and the mixes at B's two ends may not overlap: the part of A's crossfade after the cut and the part of B's own crossfade before its end together fit in B's length (`veel-crossfade-overlap`; a clip with a mix at one end only must hold that mix's part the same way). The bridge turns the cut into Kdenlive's overlapping clips in one place, and write-back turns them back.
 
 **Values of the effect's parameters.** A bare number is the parameter's stored unit, as in Null (`null-v0.md:193`), and a unit word converts to it exactly:
 
-- **A rectangle** is `[x y w h]` in pixels of the sequence's frame, numbers, with an optional fifth item, the opacity: a number from 0 to 1 as stored, or a percent (`85%` is `0.85`). Left out, the opacity is `1`.
+- **A rectangle** is `[x y w h]` in pixels of the sequence's frame, numbers, with an optional fifth item, the opacity: a number from 0 to 1 as stored, or a percent (`85%` is `0.85`). Left out, the opacity is `1`. Its bounds are the rectangle's own, not the asset file's (which gives none): `x` and `y` are any number, so it may sit partly or wholly outside the frame; `w` and `h` are at least 0, as Kdenlive's keyframed rectangle editor allows (`allowNullRect`, `src/assets/view/widgets/keyframecontainer.cpp:757` and `src/widgets/geometrywidget.cpp:85,103` at `v26.08.3`). A width or height of 0 is valid and means the clip's picture is scaled to no area, so nothing of it shows at that key. A negative width or height, or an opacity outside 0 to 1, is a `veel-range` error.
 - **A point** is `[x y]`, each a number as stored or a percent of it (`[50% 50%]` is `[0.5 0.5]`).
 - **An angle** is a number of degrees, bare or with `deg` (`2.5deg`).
 - **A choice** is one of the parameter's words below.
@@ -366,7 +376,7 @@ A slice project is a folder of `.veel` files, read as one project: any file may 
 
 A parameter that takes keyframes takes either one value (`rotation 2.5deg`) or a block of `key` lines, never both. Keys are written in strictly increasing time from 0, and each key holds a value of the parameter's form. A key at or past the clip's end is not refused by the slice: Kdenlive's own handling of such keys on a trim (V22) is read by the census (0-08).
 
-**Bounds.** The schema records each bound the asset file gives, in the parameter's own unit, both ends inclusive, in the form of Scowr's RFC 0001 (G6). Whether a value outside one is an error, and how the bound prints, is 1b-04's (section 16), so the slice's check does not report it. Kdenlive's bounds are sometimes only a slider's: its `rotation` runs from −360 to 360, where MLT's own metadata for `qtblend` says 0 to 360.
+**Bounds.** The schema records each bound the asset file gives, in the parameter's own unit, both ends inclusive, in the form of Scowr's RFC 0001 (G6). Whether a value outside one is an error, and how the bound prints, is 1b-04's (section 16), so the slice's check does not report it; a rectangle's own bounds, above, are not the file's and are checked. Kdenlive's bounds are sometimes only a slider's: its `rotation` runs from −360 to 360, where MLT's own metadata for `qtblend` says 0 to 360.
 
 **Defaults.** A parameter left out has the value Kdenlive gives a new effect (section 12), which the census measures (0-08); until it does, the asset file's `default` stands in, as the table below gives it.
 
@@ -382,7 +392,7 @@ The slice's one effect is Kdenlive's Transform, MLT's `qtblend` filter, chosen o
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
 | `compositing` | `compositing` | `list` | A choice (below) | No | `0`, `alpha-blend` | None | `qtblend.xml:56` | Lines 14, 29, 56 |
 | `distort` | `distort` | `bool` | A switch | No | `0`, `off` | `0` to `1` (the switch's two values) | `qtblend.xml:60` | Lines 18, 33, 60 |
-| `rect` | `rect` | `animatedrect` | A rectangle | Yes | `0 0 %width %height 1`, the whole frame | None | `qtblend.xml:63` | Lines 8, 39, 63 |
+| `rect` | `rect` | `animatedrect` | A rectangle | Yes | `0 0 %width %height 1`, the whole frame | None in the file; its own: `w` and `h` at least 0 (0 shows nothing), `x` and `y` any | `qtblend.xml:63` | Lines 8, 39, 63 |
 | `rotate-anchor` | `rotate_anchor` | `animatedpoint` | A point, as stored (Kdenlive shows it times 100, `factor="100 100"`, with `%`) | Yes | `0.5 0.5 0 0`: the point `[0.5 0.5]` | `[-1 -1]` to `[1 1]` | `qtblend.xml:66` | Lines 42, 66 |
 | `rotation` | `rotation` | `animated` | An angle | Yes | `0` | `-360deg` to `360deg` | `qtblend.xml:69` | Lines 11, 45, 69 |
 | `rotate-center` (not in the slice) | `rotate_center` | `bool` | A switch | No | `1`, `on` | `0` to `1` | `qtblend.xml:36` | Line 36 |
@@ -410,7 +420,7 @@ sequence @main "Main" {
     clip @a from=@interview 00:00:10:00..+5s at 0 {
       effect @push qtblend {
         rect {
-          key 0  [0 0 1920 1080]
+          key 0 [0 0 1920 1080]
           key 2s [-96 -54 2112 1188] ease=cubic-in
         }
       }
@@ -451,9 +461,9 @@ sequence @main "Main" {
   track @v2 video "Inset" {
     clip @inset from=@drone 00:00:12:00..+150 at 01:00:02:00 {
       effect @pip qtblend {
+        compositing screen
         rect [1248 72 576 324 85%]
         rotation 2.5deg
-        compositing screen
       }
     }
   }
@@ -463,7 +473,7 @@ sequence @main "Main" {
     clip @host-b from=@host 14:35:40:00..+300 at 210 {
       effect @push-in qtblend {
         rect {
-          key 0   [0 0 1920 1080]
+          key 0 [0 0 1920 1080]
           key 270 [-96 -54 2112 1188] ease=smooth
         }
       }
@@ -474,4 +484,4 @@ sequence @main "Main" {
 
 ### The corpus
 
-`tests/slice/` holds one folder per example, each a slice project: `one-clip` (the least a project holds), `two-clips` and `picture-in-picture` (the worked examples above, byte for byte), `every-parameter` (each of Transform's five parameters set and keyframed, every `ease`, attributes on their owner's line and as child lines, two effects in one stack) and `crossfades` (two crossfades in a row, one of an odd length and one in seconds). `veel_syntax`'s spec-example test parses every example of this spec and every file of the corpus, and fails on any diagnostic; `veel_schema`'s corpus test fails on a name, effect, `ease` or choice word the slice schema does not hold. Checking the corpus in full is 1a-04's `veel check`.
+`tests/slice/` holds one folder per example, each a slice project: `one-clip` (the least a project holds), `two-clips` and `picture-in-picture` (the worked examples above, byte for byte), `every-parameter` (each of Transform's five parameters set and keyframed, every `ease`, attributes on their owner's line and as child lines, two effects in one stack) and `crossfades` (two crossfades in a row, one of an odd length and one in seconds). `veel_syntax`'s spec-example test parses every example of this spec and every file of the corpus, and fails on any diagnostic; `veel_schema`'s corpus test fails on a name, effect, `ease` or choice word the slice schema does not hold. Since 1a-04, `veel check` checks every folder in full and `veel fmt --check` finds every file in canonical form (section 12).
