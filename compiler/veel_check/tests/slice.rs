@@ -85,6 +85,37 @@ fn the_worked_examples_hold_the_frames_the_spec_works_out() {
     assert_eq!(p.sequence("main").unwrap().tracks[0].handle, "v2");
 }
 
+/// Annilay's `.annilay/ids.veel` at a project's root is its map of handles, not part of the
+/// project (spec, section 7): the folder's files and its check leave it out. Elsewhere a folder
+/// of that name is read as any other.
+#[test]
+fn annilays_folder_is_not_part_of_the_project() {
+    let dir = std::env::temp_dir().join(format!("veel-annilay-folder-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(dir.join(".annilay")).unwrap();
+    std::fs::create_dir_all(dir.join("sequences/.annilay")).unwrap();
+    std::fs::copy(
+        corpus().join("one-clip/sequences/main.veel"),
+        dir.join("sequences/main.veel"),
+    )
+    .unwrap();
+    std::fs::write(
+        dir.join(".annilay/ids.veel"),
+        "ids {\n  source @shot \"2\"\n}\n",
+    )
+    .unwrap();
+    std::fs::write(dir.join("sequences/.annilay/x.veel"), "// read\n").unwrap();
+    let names: Vec<String> = project_files(&dir)
+        .unwrap()
+        .into_iter()
+        .map(|(n, _)| n)
+        .collect();
+    let checked = check_folder(&dir).unwrap();
+    std::fs::remove_dir_all(&dir).unwrap();
+    assert_eq!(names, ["sequences/.annilay/x.veel", "sequences/main.veel"]);
+    assert!(checked.is_clean(), "{}", checked.render());
+}
+
 /// A copy of a corpus folder with `from` replaced by `to` in its file `file`.
 fn planted(folder: &str, file: &str, from: &str, to: &str) -> String {
     let dir = corpus().join(folder);

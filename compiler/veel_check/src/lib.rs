@@ -156,13 +156,18 @@ pub fn check(files: &[(String, String)]) -> Checked {
 
 /// The `.veel` files of the project folder `dir`, at any depth, each named relative to it with
 /// `/` between folders, sorted. Veelindy's manifest, `veelindy.veel` at the root, is Veelindy's
-/// to check and is left out (spec, section 17).
+/// to check and is left out, and so is Annilay's folder `.annilay/` at the root, whose
+/// `ids.veel` is its map of handles, not part of the project (spec, sections 7 and 17).
 pub fn project_files(dir: &Path) -> std::io::Result<Vec<(String, PathBuf)>> {
     let mut out = Vec::new();
     let mut stack = vec![dir.to_path_buf()];
+    let annilay = dir.join(".annilay");
     while let Some(d) = stack.pop() {
         for e in std::fs::read_dir(&d)? {
             let p = e?.path();
+            if p == annilay {
+                continue;
+            }
             if p.is_dir() {
                 stack.push(p);
             } else if p.extension().is_some_and(|x| x == "veel") {
