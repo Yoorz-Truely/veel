@@ -1,0 +1,5 @@
+# What tools/fuzz.sh grows: the corpus, the crashes and the build. Seeds are committed.
+target/
+corpus/
+artifacts/
+coverage/

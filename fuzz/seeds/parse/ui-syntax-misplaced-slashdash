@@ -1,0 +1,4 @@
+@€// `/-` comments out a whole node, so it goes before the node's name; and a node ends after its block.
+clip /- @a from=@interview
+track @v1 video { rate 25 } at 0
+/-

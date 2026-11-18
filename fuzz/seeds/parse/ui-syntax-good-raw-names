@@ -1,0 +1,10 @@
+@€// A good file: names inside `raw` are Kdenlive's own and are not checked; outside it they are.
+clip @c from=@drone 0..+6s at 12s len 6s {
+  raw {
+    kdenlive:clipname "Drone 04"
+    kdenlive:id 3
+    deep_block {
+      mlt_service avformat
+    }
+  }
+}

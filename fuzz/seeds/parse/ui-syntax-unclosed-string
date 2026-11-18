@@ -1,0 +1,3 @@
+@€// A string not closed on its line, and an unknown escape.
+source @a "Interview
+source @b "Drone \q 04"

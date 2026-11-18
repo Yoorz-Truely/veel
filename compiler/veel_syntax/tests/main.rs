@@ -4,6 +4,8 @@
 
 #[path = "boundary.rs"]
 mod boundary;
+#[path = "recovery.rs"]
+mod recovery;
 #[path = "spec_examples.rs"]
 mod spec_examples;
 #[path = "syntax.rs"]
@@ -12,7 +14,13 @@ mod syntax;
 mod ui;
 
 /// The test files of this folder, each a module above.
-const MODULES: &[&str] = &["boundary.rs", "spec_examples.rs", "syntax.rs", "ui.rs"];
+const MODULES: &[&str] = &[
+    "boundary.rs",
+    "recovery.rs",
+    "spec_examples.rs",
+    "syntax.rs",
+    "ui.rs",
+];
 
 #[test]
 fn every_test_file_is_a_module() {
