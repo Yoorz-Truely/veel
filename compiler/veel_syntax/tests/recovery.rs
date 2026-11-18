@@ -209,7 +209,7 @@ const GARBLED: [(&str, &str, &str, &str); 16] = [
         "misplaced-slashdash",
         "clip @a from=@walk /- { crossfade 12 }\nclip @b\n",
         "@b",
-        "",
+        "/- comments out a whole node",
     ),
     (
         "lone-equals",
@@ -233,9 +233,9 @@ fn garbled_slice_text_recovers_with_diagnostics() {
         let found = diagnostics(&file, FileId(0));
         let syntax: Vec<_> = found.iter().filter(|d| d.code == codes::SYNTAX).collect();
         if says.is_empty() {
-            // Not every garble is a syntax error (a control byte is a word); then only the
-            // invariants and the survivor are checked.
-            assert!(found.len() <= text.len(), "{name}");
+            // Not every garble is a syntax error: control bytes, a BOM and a CR are a word and
+            // whitespace, for the checker to judge.
+            assert!(syntax.is_empty(), "{name}: {syntax:#?}");
         } else {
             assert!(
                 syntax.iter().any(|d| d.message.starts_with(says)),
