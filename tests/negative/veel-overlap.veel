@@ -1,0 +1,13 @@
+// veel-overlap: clips of one track that share frames, each with where it could start instead
+source @shot "Shot" media="media/shot.mov" rate=25 len=60s
+
+sequence @main "Main" rate=25 size=[1920 1080] {
+  track @v1 video {
+    clip @a from=@shot 0..+4s at 0
+    clip @b from=@shot 0..+2s at 3s
+  }
+  track @v2 video {
+    clip @c from=@shot 0..+2s at 100
+    clip @d from=@shot 0..+3s at 40
+  }
+}

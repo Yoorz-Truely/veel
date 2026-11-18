@@ -1,0 +1,17 @@
+// veel-time-inexact: times that are not a whole frame, never rounded, and a rate written as a decimal
+source @ntsc "NTSC" media="media/ntsc.mov" rate=29.97 len=00:01:00:00
+
+source @shot "Shot" media="media/shot.mov" rate=25 len=60s
+
+sequence @main "Main" rate=25 size=[1920 1080] {
+  track @v1 video {
+    clip @a from=@shot 0..+0.01s at 0.5s {
+      effect @push qtblend {
+        rotation {
+          key 0 0deg
+          key 1.01s 90deg
+        }
+      }
+    }
+  }
+}

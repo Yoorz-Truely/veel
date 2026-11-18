@@ -1,0 +1,18 @@
+// veel-unit: units a place cannot take, and a source length with none
+source @shot "Shot" media="media/shot.mov" rate=25 len=1500
+
+source @take "Take" media="media/take.mov" rate=25 len=60s
+
+sequence @main "Main" rate=25 size=[1920 1080] {
+  track @v1 video {
+    clip @a from=@take 0..+2s at 5sec
+    clip @b from=@take 0..+2s at 100 {
+      effect @push qtblend {
+        rotation 12rad
+        rect [0 0 50% 1080]
+      }
+      crossfade 00:00:00:12
+    }
+    clip @c from=@take 4s..+2s at 150
+  }
+}

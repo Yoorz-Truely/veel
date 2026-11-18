@@ -1,0 +1,22 @@
+// veel-enum: words that are not one of their place's words, with the nearest as the fix
+source @shot "Shot" media="media/shot.mov" rate=25 len=60s
+
+sequence @main "Main" rate=25 size=[1920 1080] {
+  timecode nondrop
+  track @v1 audio {
+    clip @a from=@shot 0..+2s at 0 {
+      effect @push qtblend {
+        compositing scren
+        distort yes
+        rect time=sequence {
+          key 0 [0 0 1920 1080]
+          key 1s [0 0 960 540] ease=cubic
+        }
+      }
+      effect @mode qtblend {
+        compositing 14
+      }
+      effect @other qtblnd
+    }
+  }
+}

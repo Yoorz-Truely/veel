@@ -1,0 +1,15 @@
+veel-enum.veel:5:12 error[veel-enum]: `nondrop` is not a timecode counting of the slice: write `non-drop`
+  fix: write `non-drop`
+veel-enum.veel:6:13 error[veel-enum]: `audio` is not a track kind of the slice: write `video`
+  fix: write `video`
+veel-enum.veel:9:21 error[veel-enum]: `scren` is not a `compositing` word: write one of `alpha-blend`, `xor`, `plus`, `multiply`, `screen`, `overlay`, `darken`, `lighten`, `color-dodge`, `color-burn`, `hard-light`, `soft-light` and 10 more
+  fix: write `screen`
+veel-enum.veel:10:17 error[veel-enum]: `yes` is not a switch's value: write one of `on`, `off`
+veel-enum.veel:11:19 error[veel-enum]: `sequence` is not a key time of the slice: write `clip`
+  fix: write `clip`
+veel-enum.veel:13:37 error[veel-enum]: `cubic` is not a keyframe type: write one of `linear`, `discrete`, `smooth`, `smooth-natural`, `bounce-in`, `bounce-out`, `cubic-in`, `cubic-out`, `exponential-in`, `exponential-out`, `circular-in`, `circular-out` and 2 more
+  fix: write `cubic-in`
+veel-enum.veel:17:21 error[veel-enum]: `14` is the number Kdenlive stores; Veel writes `compositing`'s words: `screen` here
+  fix: write `screen`
+veel-enum.veel:19:21 error[veel-enum]: `qtblnd` is not an effect of the slice: write `qtblend`
+  fix: write `qtblend`

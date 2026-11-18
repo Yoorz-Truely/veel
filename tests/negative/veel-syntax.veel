@@ -1,0 +1,2 @@
+// veel-syntax: text that does not fit the node syntax, a block never closed
+source @shot "Shot" media="media/shot.mov" rate=25 len=60s {

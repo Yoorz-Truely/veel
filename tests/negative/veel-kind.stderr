@@ -1,0 +1,8 @@
+veel-kind.veel:4:1 error[veel-kind]: `sorce` is not a kind of the slice; the top of a file holds `source` and `sequence`
+  fix: write `source`
+veel-kind.veel:7:3 error[veel-kind]: `trak` is not a kind sequence @main holds; it takes `rate`, `size`, `timecode` and `track`
+  fix: write `track`
+veel-kind.veel:12:11 error[veel-kind]: `rect`'s block holds `key` lines; `kye` cannot stand in it
+  fix: write `key`
+veel-kind.veel:17:3 error[veel-kind]: a `clip` cannot stand in a `sequence`; it takes `rate`, `size`, `timecode` and `track`
+veel-kind.veel:20:1 error[veel-kind]: a `clip` stands in a `track`, not at the top of a file, which holds `source` and `sequence`

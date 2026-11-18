@@ -1,0 +1,12 @@
+veel-type.veel:2:27 error[veel-type]: a source's media path is a quoted string, `media/shot.mov`
+  fix: write `"media/shot.mov"`
+veel-type.veel:2:63 error[veel-type]: `sha256:0123` is not a hash: write `sha256:` and 64 lowercase hexadecimal digits
+veel-type.veel:4:28 error[veel-type]: a rate is a whole number (`25`) or a fraction (`30000/1001`); found a string, `"25"`
+  fix: write `25`
+veel-type.veel:4:38 error[veel-type]: a size is `[width height]` in whole pixels, as `[1920 1080]`; found 1 value
+veel-type.veel:8:21 error[veel-type]: `compositing` takes no keyframes: write one value, as `compositing alpha-blend`
+veel-type.veel:11:20 error[veel-type]: `rotation` takes one value; `3` is one too many
+  fix: remove it
+veel-type.veel:12:14 error[veel-type]: a rectangle is `[x y w h]` or `[x y w h opacity]`; found a word, `1920`
+veel-type.veel:14:20 error[veel-type]: `13` is one value too many: a crossfade takes its length
+  fix: remove it

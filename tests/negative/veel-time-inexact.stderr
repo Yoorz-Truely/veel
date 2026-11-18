@@ -1,0 +1,11 @@
+veel-time-inexact.veel:2:49 error[veel-time-inexact]: 29.97 is not exact; write 30000/1001
+  fix: write `30000/1001`
+veel-time-inexact.veel:8:24 error[veel-time-inexact]: `0.01s` is 0.25 frames at 25 frames per second, not a whole frame; write `0s` or `0.04s`
+  fix: write `0s`
+  fix: write `0.04s`
+veel-time-inexact.veel:8:37 error[veel-time-inexact]: `0.5s` is 12.5 frames at 25 frames per second, not a whole frame; write `0.48s` or `0.52s`
+  fix: write `0.48s`
+  fix: write `0.52s`
+veel-time-inexact.veel:12:15 error[veel-time-inexact]: `1.01s` is 25.25 frames at 25 frames per second, not a whole frame; write `1s` or `1.04s`
+  fix: write `1s`
+  fix: write `1.04s`

@@ -1,0 +1,11 @@
+veel-repeated.veel:3:3 error[veel-repeated]: source @shot sets `rate` twice; write it once
+  veel-repeated.veel:2:44: first set here
+  fix: remove this one
+veel-repeated.veel:8:3 error[veel-repeated]: sequence @main has two `timecode` lines; it holds at most one
+  veel-repeated.veel:7:3: the first
+  fix: remove this one
+veel-repeated.veel:12:14 error[veel-repeated]: `rect` has both a value and a block of keys; it takes one or the other
+  fix: keep the keys
+veel-repeated.veel:17:7 error[veel-repeated]: clip @a has two crossfades; it holds at most one
+  veel-repeated.veel:16:7: the first
+  fix: remove this one
