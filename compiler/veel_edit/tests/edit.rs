@@ -9,7 +9,7 @@ use proptest::prelude::*;
 use veel_check::{Checked, check, project_files};
 use veel_edit::{ClipTime, EditError, FileEdit, Owner, set_clip_time, set_word};
 use veel_syntax::{TokenKind, lex};
-use veel_time::{Time, Unit};
+use veel_time::{Clock, Time, Unit};
 
 fn corpus() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../../tests/slice")
@@ -130,16 +130,50 @@ fn one_edit(folder: usize, clip: usize, field: usize, pick: u32) -> Result<(), T
     for ((_, a), (_, b)) in files.iter().zip(&after) {
         prop_assert_eq!(comments(a), comments(b));
     }
-    // The unit is kept wherever it names the new value; frames otherwise.
-    let (was, now) = (units(old), units(&edit.replacement));
-    for (w, n) in was.iter().zip(&now) {
-        prop_assert!(
-            w == n || *n == Unit::Frames,
-            "{} -> {}",
-            old,
-            edit.replacement
-        );
-    }
+    // The unit is kept wherever it names the new value exactly; frames otherwise. The oracle
+    // is `veel_time`'s own writer, asked for each part in its old unit.
+    let was = units(old);
+    let rate = seq.rate.unwrap();
+    let seq_clock = Clock::with_timecode(rate, rate, seq.start).unwrap();
+    let src_clock = Clock::with_timecode(rate, source.rate.unwrap(), source.start).unwrap();
+    let keep = |clock: &Clock, unit: Unit, value: i64, duration: bool| {
+        if clock.write(value, unit, duration).is_some() {
+            unit
+        } else {
+            Unit::Frames
+        }
+    };
+    let plus = old.contains("..+");
+    let (start, end) = match field {
+        ClipTime::In => (frames, range.end()),
+        ClipTime::Out => (range.start(), frames),
+        _ => (range.start(), range.end()),
+    };
+    let expected = match field {
+        ClipTime::At => vec![keep(&seq_clock, was[0], frames, false)],
+        ClipTime::Crossfade => vec![keep(&seq_clock, was[0], frames, true)],
+        _ => vec![
+            if field == ClipTime::In {
+                keep(&src_clock, was[0], start, false)
+            } else {
+                was[0]
+            },
+            if plus {
+                keep(&src_clock, was[1], end - start, true)
+            } else if field == ClipTime::Out {
+                keep(&src_clock, was[1], end, false)
+            } else {
+                was[1]
+            },
+        ],
+    };
+    prop_assert_eq!(
+        units(&edit.replacement),
+        expected,
+        "{} -> {}",
+        old,
+        edit.replacement
+    );
     // The checker reads the new value back.
     let checked = check(&after);
     prop_assert!(checked.parses.iter().all(|p| p.errors().is_empty()));
